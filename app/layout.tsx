@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -9,6 +9,25 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "AuraFlow",
   description: "Controle de despesas familiar com Next.js + Supabase",
+  applicationName: "AuraFlow",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "AuraFlow",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5efe7" },
+    { media: "(prefers-color-scheme: dark)", color: "#08111f" },
+  ],
 };
 
 export default function RootLayout({

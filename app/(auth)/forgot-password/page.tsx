@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { ArrowRight } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function ForgotPasswordPage() {
@@ -30,23 +32,39 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <h1 className="mb-1 text-2xl font-semibold">Recuperar senha</h1>
-      <p className="mb-6 text-sm text-zinc-500">Informe o e-mail da sua conta.</p>
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        {message && <p className="text-sm text-emerald-500">{message}</p>}
-        <button
-          disabled={loading}
-          className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        >
+    <div className="light-panel w-full max-w-md p-6 sm:p-8">
+      <div className="mb-8 flex items-center justify-between">
+        <BrandMark compact />
+        <span className="rounded-full bg-slate-950/5 px-3 py-1 text-xs font-medium text-slate-500">Recuperação</span>
+      </div>
+
+      <div className="mb-6">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Recuperar senha</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Informe o e-mail da sua conta para receber o link.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-700">E-mail</label>
+          <input
+            type="email"
+            placeholder="voce@exemplo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="border-slate-200 bg-white text-slate-950 placeholder:text-slate-400 focus:border-sky-300"
+            required
+          />
+        </div>
+        {error && <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</p>}
+        {message && <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</p>}
+        <button disabled={loading} className="primary-button w-full">
           {loading ? "Enviando..." : "Enviar link"}
+          {!loading && <ArrowRight size={16} />}
         </button>
       </form>
 
-      <p className="mt-4 text-sm">
-        <Link href="/login" className="font-medium hover:underline">
+      <p className="mt-5 text-sm text-slate-600">
+        <Link href="/login" className="font-semibold text-slate-950 hover:underline">
           Voltar para login
         </Link>
       </p>

@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafafa;
-  --foreground: #09090b;
+  --background: #f5efe7;
+  --background-soft: #fcfaf7;
+  --foreground: #0f172a;
+  --foreground-soft: #475569;
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-strong: #ffffff;
+  --surface-border: rgba(15, 23, 42, 0.08);
+  --surface-shadow: 0 18px 60px rgba(148, 163, 184, 0.18);
+  --accent: #0f8ea2;
+  --accent-strong: #0a6c83;
+  --accent-soft: rgba(15, 142, 162, 0.14);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 }
 
 @theme inline {
@@ -11,21 +23,136 @@
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #f4f4f5;
+  --background: #08111f;
+  --background-soft: #0d1728;
+  --foreground: #e5eefc;
+  --foreground-soft: #94a3b8;
+  --surface: rgba(10, 18, 33, 0.74);
+  --surface-strong: rgba(14, 24, 42, 0.92);
+  --surface-border: rgba(148, 163, 184, 0.16);
+  --surface-shadow: 0 24px 70px rgba(2, 6, 23, 0.42);
+  --accent: #38bdf8;
+  --accent-strong: #8b5cf6;
+  --accent-soft: rgba(56, 189, 248, 0.18);
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #fb7185;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(139, 92, 246, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(6, 182, 212, 0.12), transparent 24%),
+    linear-gradient(180deg, var(--background-soft) 0%, var(--background) 100%);
   color: var(--foreground);
+}
+
+::selection {
+  background: rgba(56, 189, 248, 0.24);
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 input,
 select,
 textarea {
-  @apply rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:ring-zinc-600;
+  width: 100%;
+  @apply rounded-2xl border px-4 py-3 text-sm outline-none;
+  border-color: var(--surface-border);
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--foreground-soft);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: color-mix(in srgb, var(--accent) 55%, white);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent-soft) 80%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  @apply rounded border;
 }
 
 button {
   @apply cursor-pointer;
+}
+
+.app-surface {
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  box-shadow: var(--surface-shadow);
+  @apply rounded-3xl backdrop-blur-xl;
+}
+
+.glass-surface {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(10, 18, 32, 0.65));
+  box-shadow: 0 24px 80px rgba(2, 6, 23, 0.45);
+  @apply rounded-3xl backdrop-blur-xl;
+}
+
+.soft-label {
+  color: var(--foreground-soft);
+  @apply text-xs font-medium uppercase tracking-[0.22em];
+}
+
+.page-title {
+  @apply text-2xl font-semibold sm:text-3xl;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 14px 30px rgba(15, 142, 162, 0.22);
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white;
+}
+
+.secondary-button {
+  border: 1px solid var(--surface-border);
+  background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium;
+}
+
+.metric-card {
+  @apply rounded-[1.75rem] p-5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(13, 22, 39, 0.88), rgba(8, 17, 31, 0.94));
+  box-shadow: 0 22px 50px rgba(2, 6, 23, 0.35);
+}
+
+.light-panel {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+  @apply rounded-[2rem] backdrop-blur-sm;
 }

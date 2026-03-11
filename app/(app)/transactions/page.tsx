@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Camera, PlusCircle, ReceiptText, Wallet } from "lucide-react";
 
 type Category = { id: string; name: string };
 type Transaction = {
@@ -12,6 +13,9 @@ type Transaction = {
   receipt_url: string | null;
   category: { name: string } | null;
 };
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
 export default function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -75,81 +79,137 @@ export default function TransactionsPage() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="mb-4 text-xl font-semibold">Lançamento de gasto individual</h1>
-        <form onSubmit={submit} className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <select
-            required
-            value={form.category_id}
-            onChange={(e) => setForm((prev) => ({ ...prev, category_id: e.target.value }))}
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <input
-            required
-            type="number"
-            step="0.01"
-            placeholder="Valor"
-            value={form.amount}
-            onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
-          />
-          <input
-            type="text"
-            placeholder="Descrição"
-            value={form.description}
-            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-          />
-          <input
-            type="date"
-            value={form.transaction_date}
-            onChange={(e) => setForm((prev) => ({ ...prev, transaction_date: e.target.value }))}
-          />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
-            className="md:col-span-2"
-          />
-          {error && <p className="text-sm text-red-500 md:col-span-2">{error}</p>}
-          <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900 md:col-span-2">
-            Registrar gasto
-          </button>
-        </form>
-      </section>
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="glass-surface p-5 sm:p-6">
+          <div className="soft-label text-slate-400">Novo lançamento</div>
+          <h1 className="mt-2 text-2xl font-semibold text-white">Registrar gasto com foco no mobile</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Tire foto do recibo no iPhone ou faça upload normal no desktop sem trocar de fluxo.
+          </p>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="mb-3 text-lg font-semibold">Histórico recente</h2>
-        {loading && <p className="text-sm text-zinc-500">Carregando...</p>}
-        <AnimatePresence>
-          {transactions.map((t) => (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-2 rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-medium">{t.category?.name ?? "Sem categoria"}</span>
-                <span>R$ {Number(t.amount).toFixed(2)}</span>
-              </div>
-              <p className="text-zinc-500">{t.description || "-"}</p>
-              <div className="mt-1 flex items-center justify-between text-xs text-zinc-500">
-                <span>{t.transaction_date}</span>
-                {t.receipt_url ? (
-                  <a className="underline" href={t.receipt_url} target="_blank" rel="noreferrer">
-                    Ver recibo
-                  </a>
-                ) : (
-                  <span>Sem recibo</span>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+          <form onSubmit={submit} className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-slate-200">Categoria</label>
+              <select
+                required
+                value={form.category_id}
+                onChange={(e) => setForm((prev) => ({ ...prev, category_id: e.target.value }))}
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-200">Valor</label>
+              <input
+                required
+                type="number"
+                step="0.01"
+                placeholder="0,00"
+                value={form.amount}
+                onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-200">Data</label>
+              <input
+                type="date"
+                value={form.transaction_date}
+                onChange={(e) => setForm((prev) => ({ ...prev, transaction_date: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-slate-200">Descrição</label>
+              <input
+                type="text"
+                placeholder="Ex: mercado da semana, gasolina, farmácia"
+                value={form.description}
+                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="flex flex-col gap-3 rounded-[1.6rem] border border-dashed border-white/15 bg-white/5 p-4 text-sm text-slate-300">
+                <span className="flex items-center gap-2 text-slate-100">
+                  <Camera size={16} className="text-cyan-300" />
+                  Recibo ou comprovante
+                </span>
+                <span className="text-xs leading-5 text-slate-400">
+                  No iPhone, o sistema pode abrir câmera ou galeria. No desktop, continua como upload normal.
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
+                  className="text-xs text-slate-400"
+                />
+                {receipt && <span className="text-xs text-emerald-300">Arquivo selecionado: {receipt.name}</span>}
+              </label>
+            </div>
+            {error && <p className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 md:col-span-2">{error}</p>}
+            <button className="primary-button md:col-span-2">
+              <PlusCircle size={16} />
+              Registrar gasto
+            </button>
+          </form>
+        </div>
+
+        <div className="glass-surface p-5 sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="soft-label text-slate-400">Histórico recente</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Últimos lançamentos</h2>
+            </div>
+            <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+              {transactions.length} itens
+            </span>
+          </div>
+          {loading && <p className="text-sm text-slate-400">Carregando...</p>}
+          <AnimatePresence>
+            <div className="space-y-3">
+              {transactions.map((t) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4 text-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-1 rounded-2xl bg-cyan-400/10 p-2 text-cyan-300">
+                        <Wallet size={16} />
+                      </span>
+                      <div>
+                        <div className="font-medium text-white">{t.category?.name ?? "Sem categoria"}</div>
+                        <p className="mt-1 text-slate-400">{t.description || "Sem descrição informada"}</p>
+                      </div>
+                    </div>
+                    <span className="text-base font-semibold text-white">{formatCurrency(Number(t.amount))}</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400">
+                    <span>{t.transaction_date}</span>
+                    {t.receipt_url ? (
+                      <a
+                        className="inline-flex items-center gap-1 font-medium text-cyan-300 hover:text-cyan-200"
+                        href={t.receipt_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <ReceiptText size={14} />
+                        Ver recibo
+                      </a>
+                    ) : (
+                      <span>Sem recibo</span>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </AnimatePresence>
+        </div>
       </section>
     </motion.div>
   );

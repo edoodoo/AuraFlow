@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CalendarRange, TrendingUp } from "lucide-react";
 
 type Row = {
   category_id: string;
@@ -12,6 +12,9 @@ type Row = {
 };
 
 const now = new Date();
+const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
 export default function ComparisonPage() {
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -33,23 +36,38 @@ export default function ComparisonPage() {
   }, [month, year]);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <h1 className="mb-4 text-xl font-semibold">Comparação de gastos</h1>
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-          {Array.from({ length: 12 }).map((_, i) => (
-            <option key={i + 1} value={i + 1}>
-              Mês {i + 1}
-            </option>
-          ))}
-        </select>
-        <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
+    <div className="glass-surface p-5 sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="soft-label text-slate-400">Planejado vs realizado</div>
+          <h1 className="mt-2 text-2xl font-semibold text-white">Comparação de gastos</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            Veja onde o mês está equilibrado e onde o casal já passou do previsto.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:w-[360px]">
+          <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {monthLabels[i]}
+              </option>
+            ))}
+          </select>
+          <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-[1.6rem] border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+        <div className="flex items-center gap-2">
+          <CalendarRange size={16} className="text-cyan-300" />
+          Analisando {monthLabels[month - 1]} de {year}
+        </div>
       </div>
 
       {loading ? (
-        <p className="text-sm text-zinc-500">Carregando comparação...</p>
+        <p className="mt-5 text-sm text-slate-400">Carregando comparação...</p>
       ) : (
-        <div className="space-y-3">
+        <div className="mt-5 space-y-3">
           {rows.map((row) => {
             const pct = row.expected_amount > 0 ? (row.realized_amount / row.expected_amount) * 100 : 0;
             const exceeded = row.realized_amount > row.expected_amount;
@@ -57,30 +75,42 @@ export default function ComparisonPage() {
               <div
                 key={row.category_id}
                 className={[
-                  "rounded-lg border p-3",
+                  "rounded-[1.6rem] border p-4",
                   exceeded
-                    ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30"
-                    : "border-zinc-200 dark:border-zinc-800",
+                    ? "border-rose-400/20 bg-rose-500/10"
+                    : "border-white/10 bg-white/5",
                 ].join(" ")}
               >
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{row.category_name}</span>
-                    {exceeded && <AlertTriangle size={14} className="text-red-500" />}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-medium text-white">{row.category_name}</span>
+                      {exceeded ? (
+                        <AlertTriangle size={15} className="text-rose-300" />
+                      ) : (
+                        <TrendingUp size={15} className="text-emerald-300" />
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm text-slate-400">
+                      Responsáveis: {row.contributors.length > 0 ? row.contributors.join(", ") : "Sem lançamentos"}
+                    </p>
                   </div>
-                  <span className={exceeded ? "font-medium text-red-500" : ""}>
-                    R$ {row.realized_amount.toFixed(2)} / R$ {row.expected_amount.toFixed(2)}
+                  <span className={["text-sm font-semibold", exceeded ? "text-rose-300" : "text-white"].join(" ")}>
+                    {formatCurrency(row.realized_amount)} / {formatCurrency(row.expected_amount)}
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-900/80">
                   <div
-                    className={exceeded ? "h-full bg-red-500" : "h-full bg-emerald-500"}
+                    className={exceeded ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-emerald-400"}
                     style={{ width: `${Math.min(100, pct)}%` }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-zinc-500">
-                  Responsáveis: {row.contributors.length > 0 ? row.contributors.join(", ") : "Sem lançamentos"}
-                </p>
+
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                  <span className="text-slate-400">{pct.toFixed(0)}% do orçamento utilizado</span>
+                  {exceeded && <span className="font-medium text-rose-300">Atenção: categoria excedida</span>}
+                </div>
               </div>
             );
           })}

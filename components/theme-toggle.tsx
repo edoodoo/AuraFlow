@@ -26,7 +26,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="rounded-lg border border-zinc-300 p-2 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+      className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-100 hover:bg-white/10"
       aria-label="Alternar tema"
       title="Alternar tema"
     >

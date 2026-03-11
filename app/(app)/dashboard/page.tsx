@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, RefreshCw } from "lucide-react";
+import { CalendarRange, Plus, RefreshCw, Sparkles, Target, WalletCards } from "lucide-react";
 
 type Category = { id: string; name: string; user_id: string | null };
 type Budget = {
@@ -15,6 +15,9 @@ type Budget = {
 };
 
 const now = new Date();
+const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
 export default function DashboardPage() {
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -33,6 +36,9 @@ export default function DashboardPage() {
       }, {}),
     [categories],
   );
+  const totalBudget = useMemo(() => budgets.reduce((sum, budget) => sum + Number(budget.expected_amount || 0), 0), [budgets]);
+  const fixedCount = useMemo(() => budgets.filter((budget) => budget.is_fixed).length, [budgets]);
+  const categoriesWithBudget = useMemo(() => new Set(budgets.map((budget) => budget.category_id)).size, [budgets]);
 
   const loadData = async () => {
     setLoading(true);
@@ -119,94 +125,178 @@ export default function DashboardPage() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold">Dashboard mensal</h1>
-          <button
-            onClick={exportToNextMonth}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          >
-            <RefreshCw size={14} />
-            Exportar para o mês seguinte
+      <section className="glass-surface overflow-hidden p-5 sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="soft-label text-slate-400">Dashboard mensal</div>
+            <h1 className="mt-3 page-title text-white">Planeje, acompanhe e leve o orçamento com você.</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
+              Visual premium no desktop e leitura rápida no iPhone para categorias, metas mensais e
+              exportação dos lançamentos fixos.
+            </p>
+          </div>
+          <button onClick={exportToNextMonth} className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10">
+            <RefreshCw size={15} />
+            Exportar fixos para o próximo mês
           </button>
         </div>
 
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <option key={i + 1} value={i + 1}>
-                Mês {i + 1}
-              </option>
-            ))}
-          </select>
-          <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
+        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-[1.2fr_0.8fr] xl:grid-cols-3">
+          <div className="metric-card">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="soft-label text-slate-400">Orçado no mês</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(totalBudget)}</div>
+              </div>
+              <span className="rounded-2xl bg-cyan-400/10 p-3 text-cyan-300">
+                <WalletCards size={18} />
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-400">{categoriesWithBudget} categorias já configuradas para {monthLabels[month - 1]}.</p>
+          </div>
+          <div className="metric-card">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="soft-label text-slate-400">Orçamentos fixos</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{fixedCount}</div>
+              </div>
+              <span className="rounded-2xl bg-violet-400/10 p-3 text-violet-300">
+                <Sparkles size={18} />
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-400">Prontos para reaproveitar no próximo ciclo com um toque.</p>
+          </div>
+          <div className="metric-card">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="soft-label text-slate-400">Categorias ativas</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{categories.length}</div>
+              </div>
+              <span className="rounded-2xl bg-emerald-400/10 p-3 text-emerald-300">
+                <Target size={18} />
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-400">Base pronta para acompanhar o combinado do casal.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="glass-surface p-5 sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <div className="soft-label text-slate-400">Período de análise</div>
+            <div className="mt-2 flex items-center gap-2 text-white">
+              <CalendarRange size={18} className="text-cyan-300" />
+              <span className="text-lg font-semibold">
+                {monthLabels[month - 1]} de {year}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:w-[540px]">
+            <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+              {Array.from({ length: 12 }).map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {monthLabels[i]}
+                </option>
+              ))}
+            </select>
+            <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
+            <button className="primary-button w-full" type="button" onClick={() => void loadData()}>
+              Atualizar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.72fr_1.28fr]">
+        <div className="glass-surface p-5 sm:p-6">
+          <div className="soft-label text-slate-400">Nova categoria</div>
+          <h2 className="mt-2 text-xl font-semibold text-white">Expanda seu mapa financeiro</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Crie novas categorias para alimentar o dashboard, a comparação e os lançamentos.
+          </p>
+
+          <form onSubmit={createCategory} className="mt-5 space-y-3">
+            <input
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="Ex: Mercado, Pet, Assinaturas"
+            />
+            <button className="primary-button w-full">
+              <Plus size={16} />
+              Criar categoria
+            </button>
+          </form>
+
+          {error && <p className="mt-4 rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
+          {loading && <p className="mt-4 text-sm text-slate-400">Carregando orçamentos...</p>}
         </div>
 
-        <form onSubmit={createCategory} className="mb-4 flex gap-2">
-          <input
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            placeholder="Nova categoria"
-            className="flex-1"
-          />
-          <button className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-            <Plus size={14} />
-            Criar
-          </button>
-        </form>
+        <div className="glass-surface p-5 sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="soft-label text-slate-400">Categorias e metas</div>
+              <h2 className="mt-2 text-xl font-semibold text-white">Configure os valores previstos do mês</h2>
+            </div>
+            <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+              {categories.length} itens
+            </span>
+          </div>
 
-        {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
-        {loading && <p className="mb-3 text-sm text-zinc-500">Carregando...</p>}
+          <div className="space-y-3">
+            <AnimatePresence>
+              {categories.map((cat) => {
+                const budget = budgets.find((b) => b.category_id === cat.id);
+                return (
+                  <motion.div
+                    key={cat.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4"
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <div className="text-base font-medium text-white">{categoryMap[cat.id] ?? "Categoria"}</div>
+                        <div className="mt-1 text-sm text-slate-400">
+                          {budget ? "Meta configurada para o período atual." : "Ainda sem orçamento para este mês."}
+                        </div>
+                      </div>
+                      {!budget && (
+                        <button
+                          onClick={() => createBudget(cat.id)}
+                          className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10"
+                        >
+                          Adicionar orçamento
+                        </button>
+                      )}
+                    </div>
 
-        <div className="space-y-2">
-          <AnimatePresence>
-            {categories.map((cat) => {
-              const budget = budgets.find((b) => b.category_id === cat.id);
-              return (
-                <motion.div
-                  key={cat.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="grid grid-cols-1 gap-2 rounded-lg border border-zinc-200 p-3 md:grid-cols-[1fr_150px_120px_auto] dark:border-zinc-800"
-                >
-                  <div className="font-medium">{categoryMap[cat.id] ?? "Categoria"}</div>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Valor previsto"
-                    value={budget?.expected_amount ?? ""}
-                    onChange={(e) =>
-                      budget
-                        ? void updateBudget(budget.id, { expected_amount: Number(e.target.value) })
-                        : void createBudget(cat.id)
-                    }
-                  />
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={budget?.is_fixed ?? false}
-                      onChange={(e) =>
-                        budget
-                          ? void updateBudget(budget.id, { is_fixed: e.target.checked })
-                          : void createBudget(cat.id)
-                      }
-                    />
-                    Fixo
-                  </label>
-                  {!budget && (
-                    <button
-                      onClick={() => createBudget(cat.id)}
-                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                    >
-                      Adicionar orçamento
-                    </button>
-                  )}
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                    {budget && (
+                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="Valor previsto"
+                          value={budget.expected_amount ?? ""}
+                          onChange={(e) => void updateBudget(budget.id, { expected_amount: Number(e.target.value) })}
+                        />
+                        <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                          <input
+                            type="checkbox"
+                            checked={budget.is_fixed ?? false}
+                            onChange={(e) => void updateBudget(budget.id, { is_fixed: e.target.checked })}
+                          />
+                          Repetir como fixo
+                        </label>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
+      </section>
     </motion.div>
   );
 }

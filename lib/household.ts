@@ -220,6 +220,13 @@ export async function createOrUpdateHousehold(user: MinimalUser, partnerEmail?: 
     throw new Error("O e-mail do cônjuge deve ser diferente do usuário criador.");
   }
 
+  if (normalizedPartnerEmail) {
+    const partner = await findAuthUserByEmail(normalizedPartnerEmail);
+    if (!partner) {
+      throw new Error("O e-mail informado para o cônjuge não existe na base de usuários.");
+    }
+  }
+
   let householdId = context.household?.id;
 
   if (!householdId) {

@@ -6,9 +6,13 @@ create extension if not exists pgcrypto;
 create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
+  category_kind text not null default 'variable' check (category_kind in ('fixed', 'variable')),
   user_id uuid references auth.users(id) on delete cascade,
   created_at timestamptz not null default now()
 );
+
+alter table public.categories
+add column if not exists category_kind text not null default 'variable' check (category_kind in ('fixed', 'variable'));
 
 create table if not exists public.monthly_budgets (
   id uuid primary key default gen_random_uuid(),
@@ -138,6 +142,48 @@ using (
   bucket_id = 'receipts'
   and split_part(name, '/', 1) = auth.uid()::text
 );
+
+insert into public.categories (name, category_kind, user_id)
+values
+  ('Aluguel / Hipoteca', 'fixed', null),
+  ('Condomínio', 'fixed', null),
+  ('Energia Elétrica', 'fixed', null),
+  ('Água e Saneamento', 'fixed', null),
+  ('Gás', 'fixed', null),
+  ('Internet Residencial', 'fixed', null),
+  ('Plano de Celular', 'fixed', null),
+  ('Assinaturas (Streaming/Software)', 'fixed', null),
+  ('Seguro Saúde / Plano de Saúde', 'fixed', null),
+  ('Seguro Residencial', 'fixed', null),
+  ('Seguro Auto', 'fixed', null),
+  ('Licenciamento Auto', 'fixed', null),
+  ('Renovação Habilitação', 'fixed', null),
+  ('Parcela de Veículo / Financiamento', 'fixed', null),
+  ('Mensalidade Escolar / Faculdade', 'fixed', null),
+  ('Cursos e Idiomas', 'fixed', null),
+  ('Academia / Esportes', 'fixed', null),
+  ('Terapia / Psicólogo', 'fixed', null),
+  ('Dízimo', 'fixed', null),
+  ('Mercado (Alimentação e Higiene)', 'variable', null),
+  ('Restaurantes e Delivery', 'variable', null),
+  ('Padaria e Lanches', 'variable', null),
+  ('Feira / Hortifruti', 'variable', null),
+  ('Combustível', 'variable', null),
+  ('Transporte por App', 'variable', null),
+  ('Transporte Público', 'variable', null),
+  ('Estacionamento e Pedágio', 'variable', null),
+  ('Manutenção de Veículo', 'variable', null),
+  ('Farmácia e Medicamentos', 'variable', null),
+  ('Consultas e Exames', 'variable', null),
+  ('Barbearia / Salão / Estética', 'variable', null),
+  ('Vestuário (Roupas e Calçados)', 'variable', null),
+  ('Presentes e Doações', 'variable', null),
+  ('Cinema / Shows / Eventos', 'variable', null),
+  ('Hobbies e Games', 'variable', null),
+  ('Viagens e Passeios', 'variable', null),
+  ('Manutenção Residencial (Reparos)', 'variable', null),
+  ('Imprevistos / Emergências', 'variable', null)
+on conflict (name) do update set category_kind = excluded.category_kind;
 
 create table if not exists public.households (
   id uuid primary key default gen_random_uuid(),

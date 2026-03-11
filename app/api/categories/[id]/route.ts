@@ -23,9 +23,9 @@ export async function PUT(req: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .from("categories")
-    .update({ name: parsed.data.name })
+    .update({ name: parsed.data.name, category_kind: parsed.data.kind })
     .eq("id", id)
-    .select("id,name,user_id")
+    .select("id,name,category_kind,user_id")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

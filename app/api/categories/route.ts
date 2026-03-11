@@ -23,8 +23,8 @@ export async function POST(req: Request) {
 
   const { data, error } = await supabase
     .from("categories")
-    .insert({ name: parsed.data.name, user_id: user.id })
-    .select("id,name,user_id")
+    .insert({ name: parsed.data.name, category_kind: parsed.data.kind, user_id: user.id })
+    .select("id,name,category_kind,user_id")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

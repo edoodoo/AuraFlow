@@ -264,18 +264,20 @@ export async function listVisibleCategories(context: HouseholdContext) {
 
   const { data: sharedRows, error: sharedError } = await admin
     .from("categories")
-    .select("id,name,user_id")
+    .select("id,name,category_kind,user_id")
     .is("user_id", null)
+    .order("category_kind")
     .order("name");
 
   if (sharedError) throw sharedError;
 
-  let householdRows: Array<{ id: string; name: string; user_id: string | null }> = [];
+  let householdRows: Array<{ id: string; name: string; category_kind: "fixed" | "variable"; user_id: string | null }> = [];
   if (userIds.length > 0) {
     const { data, error } = await admin
       .from("categories")
-      .select("id,name,user_id")
+      .select("id,name,category_kind,user_id")
       .in("user_id", userIds)
+      .order("category_kind")
       .order("name");
 
     if (error) throw error;

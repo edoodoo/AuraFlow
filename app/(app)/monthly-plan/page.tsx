@@ -1,12 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarRange, Link2, Plus, RefreshCw, Tags, Trash2 } from "lucide-react";
+import { ArrowRight, CalendarRange, Link2, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 type Category = {
   id: string;
   name: string;
+  category_kind: "fixed" | "variable";
 };
 
 type MemberOption = {
@@ -112,7 +114,6 @@ export default function MonthlyPlanPage() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [items, setItems] = useState<PlanItem[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [categoryName, setCategoryName] = useState("");
   const [newItems, setNewItems] = useState<Record<SectionKey, ItemDraft>>({
     general: createBlankItemDraft(),
     investments: createBlankItemDraft(),
@@ -206,29 +207,6 @@ export default function MonthlyPlanPage() {
       setSummary(data.summary ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível preparar o mensal.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const createCategory = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!categoryName.trim()) return;
-
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: categoryName }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Não foi possível criar a categoria.");
-      setCategoryName("");
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível criar a categoria.");
     } finally {
       setSaving(false);
     }
@@ -465,49 +443,30 @@ export default function MonthlyPlanPage() {
         )}
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-        <div className="glass-surface p-5 sm:p-6">
-          <div className="soft-label text-slate-400">Categorias compartilhadas</div>
-          <h2 className="mt-2 text-xl font-semibold text-white">Gerar novas categorias</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            Crie categorias que poderão ser usadas nos itens mensais, nos lançamentos e na comparação.
-          </p>
-          <form onSubmit={createCategory} className="mt-5 space-y-3">
-            <input
-              value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
-              placeholder="Ex: Escola, Plano de saúde, Academia"
-            />
-            <button className="primary-button w-full">
-              <Tags size={16} />
-              Criar categoria
-            </button>
-          </form>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <span key={category.id} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200">
-                {category.name}
-              </span>
-            ))}
+      <section className="glass-surface p-5 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="soft-label text-slate-400">Seções do mensal</div>
+            <h2 className="mt-2 text-xl font-semibold text-white">Leitura rápida do planejamento</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Use a tela de categorias para cadastrar e organizar os tipos fixos e variáveis. Aqui você acompanha como cada seção está distribuída.
+            </p>
           </div>
+          <Link href="/categories" className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10">
+            Abrir categorias
+            <ArrowRight size={16} />
+          </Link>
         </div>
-
-        <div className="glass-surface p-5 sm:p-6">
-          <div className="soft-label text-slate-400">Seções do mensal</div>
-          <h2 className="mt-2 text-xl font-semibold text-white">Leitura rápida do planejamento</h2>
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-            {summary?.sections?.map((section) => (
-              <div key={section.key} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <div className="font-medium text-white">{section.label}</div>
-                <p className="mt-2 text-sm text-slate-400">
-                  Planejado {formatCurrency(section.planned)} · Realizado {formatCurrency(section.realized)}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">{section.item_count} itens nessa seção</p>
-              </div>
-            )) ?? (
-              <p className="text-sm text-slate-400">Crie o mensal para visualizar os blocos operacionais do período.</p>
-            )}
-          </div>
+        <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-4">
+          {summary?.sections?.map((section) => (
+            <div key={section.key} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+              <div className="font-medium text-white">{section.label}</div>
+              <p className="mt-2 text-sm text-slate-400">
+                Planejado {formatCurrency(section.planned)} · Realizado {formatCurrency(section.realized)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">{section.item_count} itens nessa seção</p>
+            </div>
+          )) ?? <p className="text-sm text-slate-400">Crie o mensal para visualizar os blocos operacionais do período.</p>}
         </div>
       </section>
 
@@ -542,7 +501,7 @@ export default function MonthlyPlanPage() {
                   <option value="">Sem categoria</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
-                      {category.name}
+                      {category.name} · {category.category_kind === "fixed" ? "fixo" : "variável"}
                     </option>
                   ))}
                 </select>
@@ -609,7 +568,7 @@ export default function MonthlyPlanPage() {
                           <option value="">Sem categoria</option>
                           {categories.map((category) => (
                             <option key={category.id} value={category.id}>
-                              {category.name}
+                              {category.name} · {category.category_kind === "fixed" ? "fixo" : "variável"}
                             </option>
                           ))}
                         </select>

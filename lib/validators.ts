@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const categorySchema = z.object({
   name: z.string().trim().min(2).max(60),
+  kind: z.enum(["fixed", "variable"]).default("variable"),
 });
 
 export const householdSchema = z.object({

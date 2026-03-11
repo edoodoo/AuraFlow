@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Tags, Trash2 } from "lucide-react";
+import { Info, Plus, Tags, Trash2 } from "lucide-react";
 
 type Category = {
   id: string;
@@ -107,6 +107,16 @@ export default function CategoriesPage() {
           </div>
         </form>
 
+        <div className="mt-4 rounded-2xl border border-cyan-400/15 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
+          <div className="flex items-start gap-2">
+            <Info size={16} className="mt-0.5 shrink-0 text-cyan-300" />
+            <p>
+              `Padrão do sistema` significa que a categoria veio da lista inicial do AuraFlow. Ela fica disponível para o casal,
+              mas não pode ser removida nesta tela. Categorias criadas por você mostram a lixeira para exclusão.
+            </p>
+          </div>
+        </div>
+
         {error && <p className="mt-4 rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
         {loading && <p className="mt-4 text-sm text-slate-400">Carregando categorias...</p>}
       </section>
@@ -137,13 +147,14 @@ export default function CategoriesPage() {
                     <button
                       type="button"
                       onClick={() => void deleteCategory(category.id)}
-                      className="secondary-button border-rose-400/20 bg-rose-500/10 px-3 py-2 text-rose-200 hover:bg-rose-500/20"
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
+                      aria-label={`Remover categoria ${category.name}`}
+                      title="Remover categoria"
                     >
                       <Trash2 size={14} />
-                      Remover
                     </button>
                   ) : (
-                    <span className="rounded-full bg-slate-950/40 px-3 py-1 text-xs text-slate-300">Padrão</span>
+                    <span className="rounded-full bg-slate-950/40 px-3 py-1 text-xs text-slate-300">Padrão do sistema</span>
                   )}
                 </div>
               ))}

@@ -15,9 +15,14 @@ export async function getSupabaseServerClient(): Promise<SupabaseClient> {
         return cookieStore.getAll();
       },
       setAll(cookieList) {
-        cookieList.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
-        });
+        try {
+          cookieList.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // In server components, cookie writes can fail during render.
+          // Supabase can still read the session for this request.
+        }
       },
     },
   });

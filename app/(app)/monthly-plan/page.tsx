@@ -196,15 +196,18 @@ export default function MonthlyPlanPage() {
         }),
       });
 
-      const data: ApiPayload & { error?: string } = await res.json();
+      const data: (ApiPayload & { error?: string }) | { error?: string } = await res.json().catch(() => ({
+        error: "Não foi possível processar a resposta do servidor.",
+      }));
       if (!res.ok) throw new Error(data.error ?? "Não foi possível preparar o mensal.");
+      const payload = data as ApiPayload;
 
-      setHousehold(data.household);
-      setMemberOptions(data.member_options ?? []);
-      setCategories(data.categories ?? []);
-      setPlan(data.plan);
-      setItems(data.items ?? []);
-      setSummary(data.summary ?? null);
+      setHousehold(payload.household);
+      setMemberOptions(payload.member_options ?? []);
+      setCategories(payload.categories ?? []);
+      setPlan(payload.plan);
+      setItems(payload.items ?? []);
+      setSummary(payload.summary ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível preparar o mensal.");
     } finally {

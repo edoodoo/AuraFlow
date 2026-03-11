@@ -53,34 +53,43 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { user, response } = await requireUserForRoute();
-  if (!user) return response;
+  try {
+    const { user, response } = await requireUserForRoute();
+    if (!user) return response;
 
-  const body = await req.json().catch(() => null);
-  const parsed = monthlyPlanRequestSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Dados do mensal inválidos." }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    const parsed = monthlyPlanRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Dados do mensal inválidos." }, { status: 400 });
+    }
+
+    const householdContext = await createOrUpdateHousehold(user, parsed.data.partner_email || null);
+    const plan = await getOrCreateMonthlyPlan(householdContext, parsed.data.month, parsed.data.year);
+    const items = await listMonthlyPlanItems(plan.id);
+    const transactions = await listHouseholdTransactions(householdContext, parsed.data.month, parsed.data.year);
+    const categories = await listVisibleCategories(householdContext);
+    const memberLabels = Object.fromEntries(
+      (householdContext.household?.members ?? []).map((member) => [member.user_id, member.email ?? "Usuário"]),
+    );
+
+    return NextResponse.json({
+      household: householdContext.household,
+      member_options: (householdContext.household?.members ?? []).map((member) => ({
+        user_id: member.user_id,
+        label: member.email ?? "Usuário",
+        role: member.role,
+      })),
+      categories,
+      plan,
+      items,
+      summary: buildMonthlySummary(items, transactions, memberLabels),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Não foi possível criar ou atualizar o mensal.",
+      },
+      { status: 400 },
+    );
   }
-
-  const householdContext = await createOrUpdateHousehold(user, parsed.data.partner_email || null);
-  const plan = await getOrCreateMonthlyPlan(householdContext, parsed.data.month, parsed.data.year);
-  const items = await listMonthlyPlanItems(plan.id);
-  const transactions = await listHouseholdTransactions(householdContext, parsed.data.month, parsed.data.year);
-  const categories = await listVisibleCategories(householdContext);
-  const memberLabels = Object.fromEntries(
-    (householdContext.household?.members ?? []).map((member) => [member.user_id, member.email ?? "Usuário"]),
-  );
-
-  return NextResponse.json({
-    household: householdContext.household,
-    member_options: (householdContext.household?.members ?? []).map((member) => ({
-      user_id: member.user_id,
-      label: member.email ?? "Usuário",
-      role: member.role,
-    })),
-    categories,
-    plan,
-    items,
-    summary: buildMonthlySummary(items, transactions, memberLabels),
-  });
 }

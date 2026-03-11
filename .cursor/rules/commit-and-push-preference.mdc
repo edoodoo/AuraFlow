@@ -1,0 +1,11 @@
+---
+description: Auto commit and push completed work by default
+alwaysApply: true
+---
+
+# Commit And Push Preference
+
+- When a task is complete and no further manual user action is required, create a git commit and push it by default.
+- Follow the repository's existing commit message style.
+- Still respect explicit user instructions to avoid committing or pushing.
+- Do not auto-push if the work is incomplete, depends on pending manual validation, or would be unsafe.

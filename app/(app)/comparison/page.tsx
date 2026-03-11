@@ -6,9 +6,12 @@ import { AlertTriangle, CalendarRange, TrendingUp } from "lucide-react";
 type Row = {
   category_id: string;
   category_name: string;
+  section: string;
   expected_amount: number;
   realized_amount: number;
   contributors: string[];
+  items_pending: number;
+  payer_breakdown: Array<{ user_id: string; label: string; total: number }>;
 };
 
 const now = new Date();
@@ -92,8 +95,20 @@ export default function ComparisonPage() {
                       )}
                     </div>
                     <p className="mt-2 text-sm text-slate-400">
-                      Responsáveis: {row.contributors.length > 0 ? row.contributors.join(", ") : "Sem lançamentos"}
+                      Pagamentos lançados por: {row.contributors.length > 0 ? row.contributors.join(", ") : "Sem lançamentos"}
                     </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Seção: {row.section} · Itens ainda pendentes: {row.items_pending}
+                    </p>
+                    {row.payer_breakdown.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                        {row.payer_breakdown.map((payer) => (
+                          <span key={payer.user_id} className="rounded-full bg-slate-950/40 px-2 py-1 text-slate-300">
+                            {payer.label}: {formatCurrency(payer.total)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <span className={["text-sm font-semibold", exceeded ? "text-rose-300" : "text-white"].join(" ")}>
                     {formatCurrency(row.realized_amount)} / {formatCurrency(row.expected_amount)}

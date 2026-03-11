@@ -1,78 +1,60 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { CalendarRange, Plus, RefreshCw, Sparkles, Target, TrendingUp, WalletCards } from "lucide-react";
-
-type Category = { id: string; name: string; user_id: string | null };
-type Budget = {
-  id: string;
-  category_id: string;
-  expected_amount: number;
-  is_fixed: boolean;
-  month: number;
-  year: number;
-};
-type ComparisonRow = {
-  category_id: string;
-  category_name: string;
-  expected_amount: number;
-  realized_amount: number;
-  contributors: string[];
-};
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, CalendarRange, Sparkles, TrendingUp, WalletCards } from "lucide-react";
 
 const now = new Date();
 const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
+type DashboardSummary = {
+  total_planned: number;
+  total_realized: number;
+  fixed_count: number;
+  usage_pct: number;
+  top_categories: Array<{ category_id: string; category_name: string; realized_amount: number }>;
+  pending_items: Array<{
+    id: string;
+    title: string;
+    status: "pending" | "partial" | "paid";
+    expected_amount: number;
+    section: string;
+    assigned_to: string;
+    due_date: string | null;
+  }>;
+  paid_by: Array<{ user_id: string; label: string; total: number }>;
+};
+
 export default function DashboardPage() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [comparisonRows, setComparisonRows] = useState<ComparisonRow[]>([]);
-  const [newCategoryName, setNewCategoryName] = useState("");
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [hasPlan, setHasPlan] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const categoryMap = useMemo(
-    () =>
-      categories.reduce<Record<string, string>>((acc, c) => {
-        acc[c.id] = c.name;
-        return acc;
-      }, {}),
-    [categories],
-  );
-  const totalBudget = useMemo(() => budgets.reduce((sum, budget) => sum + Number(budget.expected_amount || 0), 0), [budgets]);
-  const fixedCount = useMemo(() => budgets.filter((budget) => budget.is_fixed).length, [budgets]);
-  const categoriesWithBudget = useMemo(() => new Set(budgets.map((budget) => budget.category_id)).size, [budgets]);
-  const realizedTotal = useMemo(
-    () => comparisonRows.reduce((sum, row) => sum + Number(row.realized_amount || 0), 0),
-    [comparisonRows],
-  );
-  const remainingBudget = Math.max(totalBudget - realizedTotal, 0);
-  const usagePct = totalBudget > 0 ? Math.min(100, (realizedTotal / totalBudget) * 100) : 0;
-  const topCategories = useMemo(
-    () => [...comparisonRows].sort((a, b) => b.realized_amount - a.realized_amount).slice(0, 4),
-    [comparisonRows],
-  );
-  const budgetHealthLabel = realizedTotal > totalBudget ? "Acima do previsto" : usagePct > 80 ? "Atenção ao ritmo" : "Mês sob controle";
+  const paidBy = summary?.paid_by ?? [];
+  const topCategories = summary?.top_categories ?? [];
+  const pendingItems = summary?.pending_items ?? [];
+  const remainingBudget = Math.max((summary?.total_planned ?? 0) - (summary?.total_realized ?? 0), 0);
+  const budgetHealthLabel = useMemo(() => {
+    if (!summary) return "Sem planejamento";
+    if (summary.total_realized > summary.total_planned) return "Acima do previsto";
+    if (summary.usage_pct > 80) return "Atenção ao ritmo";
+    return "Mês sob controle";
+  }, [summary]);
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [cRes, bRes, comparisonRes] = await Promise.all([
-        fetch("/api/categories", { cache: "no-store" }),
-        fetch(`/api/monthly-budgets?month=${month}&year=${year}`, { cache: "no-store" }),
-        fetch(`/api/reports/comparison?month=${month}&year=${year}`, { cache: "no-store" }),
-      ]);
-      if (!cRes.ok || !bRes.ok || !comparisonRes.ok) throw new Error("Falha ao carregar dados.");
-      const [cData, bData, comparisonData] = await Promise.all([cRes.json(), bRes.json(), comparisonRes.json()]);
-      setCategories(cData.categories ?? []);
-      setBudgets(bData.budgets ?? []);
-      setComparisonRows(comparisonData.rows ?? []);
+      const res = await fetch(`/api/monthly-plan/summary?month=${month}&year=${year}`, { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Falha ao carregar o resumo.");
+      setSummary(data.summary ?? null);
+      setHasPlan(Boolean(data.plan));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
     } finally {
@@ -85,81 +67,21 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month, year]);
 
-  const createCategory = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!newCategoryName.trim()) return;
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newCategoryName }),
-    });
-    if (res.ok) {
-      setNewCategoryName("");
-      void loadData();
-    }
-  };
-
-  const createBudget = async (categoryId: string) => {
-    const exists = budgets.some((b) => b.category_id === categoryId);
-    if (exists) return;
-    await fetch("/api/monthly-budgets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        category_id: categoryId,
-        month,
-        year,
-        expected_amount: 0,
-        is_fixed: false,
-      }),
-    });
-    void loadData();
-  };
-
-  const updateBudget = async (id: string, patch: Partial<Budget>) => {
-    await fetch(`/api/monthly-budgets/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
-    void loadData();
-  };
-
-  const exportToNextMonth = async () => {
-    const d = new Date(year, month - 1, 1);
-    d.setMonth(d.getMonth() + 1);
-    const targetMonth = d.getMonth() + 1;
-    const targetYear = d.getFullYear();
-    await fetch("/api/monthly-budgets/export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        source_month: month,
-        source_year: year,
-        target_month: targetMonth,
-        target_year: targetYear,
-        only_fixed: true,
-      }),
-    });
-    alert("Orçamentos fixos exportados para o próximo mês.");
-  };
-
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <section className="glass-surface overflow-hidden p-5 sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
             <div className="soft-label text-slate-400">Dashboard mensal</div>
-            <h1 className="mt-3 page-title text-white">Planeje, acompanhe e leve o orçamento com você.</h1>
+            <h1 className="mt-3 page-title text-white">Acompanhe o mês sem perder o foco no que realmente precisa ser pago.</h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-              Visual premium no desktop e leitura rápida no iPhone para categorias, metas mensais e
-              exportação dos lançamentos fixos.
+              A home ficou mais enxuta: o trabalho operacional acontece em `Mensal`; aqui você enxerga o que importa.
             </p>
           </div>
-          <button onClick={exportToNextMonth} className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10">
-            <RefreshCw size={15} />
-            Exportar fixos para o próximo mês
-          </button>
+          <Link href="/monthly-plan" className="primary-button">
+            Ir para o mensal
+            <ArrowRight size={16} />
+          </Link>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-[1.2fr_0.8fr] xl:grid-cols-3">
@@ -167,37 +89,41 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="soft-label text-slate-400">Orçado no mês</div>
-                <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(totalBudget)}</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(summary?.total_planned ?? 0)}</div>
               </div>
               <span className="rounded-2xl bg-cyan-400/10 p-3 text-cyan-300">
                 <WalletCards size={18} />
               </span>
             </div>
-            <p className="mt-3 text-sm text-slate-400">{categoriesWithBudget} categorias já configuradas para {monthLabels[month - 1]}.</p>
+            <p className="mt-3 text-sm text-slate-400">
+              {hasPlan
+                ? `Planejamento compartilhado ativo para ${monthLabels[month - 1]}.`
+                : "Ainda não existe um mensal criado para este período."}
+            </p>
           </div>
           <div className="metric-card">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="soft-label text-slate-400">Orçamentos fixos</div>
-                <div className="mt-3 text-3xl font-semibold text-white">{fixedCount}</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{summary?.fixed_count ?? 0}</div>
               </div>
               <span className="rounded-2xl bg-violet-400/10 p-3 text-violet-300">
                 <Sparkles size={18} />
               </span>
             </div>
-            <p className="mt-3 text-sm text-slate-400">Prontos para reaproveitar no próximo ciclo com um toque.</p>
+            <p className="mt-3 text-sm text-slate-400">Itens que podem ser exportados automaticamente para o mês seguinte.</p>
           </div>
           <div className="metric-card">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="soft-label text-slate-400">Categorias ativas</div>
-                <div className="mt-3 text-3xl font-semibold text-white">{categories.length}</div>
+                <div className="soft-label text-slate-400">Ritmo do mês</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{summary ? `${summary.usage_pct.toFixed(0)}%` : "0%"}</div>
               </div>
               <span className="rounded-2xl bg-emerald-400/10 p-3 text-emerald-300">
-                <Target size={18} />
+                <TrendingUp size={18} />
               </span>
             </div>
-            <p className="mt-3 text-sm text-slate-400">Base pronta para acompanhar o combinado do casal.</p>
+            <p className="mt-3 text-sm text-slate-400">{budgetHealthLabel}</p>
           </div>
         </div>
 
@@ -206,8 +132,10 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="soft-label text-slate-400">Ritmo do mês</div>
-                <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(realizedTotal)}</div>
-                <p className="mt-1 text-sm text-slate-400">Realizado até agora de um total orçado de {formatCurrency(totalBudget)}.</p>
+                <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary?.total_realized ?? 0)}</div>
+                <p className="mt-1 text-sm text-slate-400">
+                  Realizado até agora de um total planejado de {formatCurrency(summary?.total_planned ?? 0)}.
+                </p>
               </div>
               <div className="rounded-2xl bg-cyan-400/10 px-4 py-3 text-sm text-cyan-200">
                 {budgetHealthLabel}
@@ -215,12 +143,12 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-900/70">
               <div
-                className={realizedTotal > totalBudget ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-cyan-400"}
-                style={{ width: `${usagePct}%` }}
+                className={(summary?.total_realized ?? 0) > (summary?.total_planned ?? 0) ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-cyan-400"}
+                style={{ width: `${summary?.usage_pct ?? 0}%` }}
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
-              <span className="text-slate-400">{usagePct.toFixed(0)}% do orçamento utilizado</span>
+              <span className="text-slate-400">{summary?.usage_pct?.toFixed(0) ?? 0}% do orçamento utilizado</span>
               <span className="font-medium text-white">Saldo restante: {formatCurrency(remainingBudget)}</span>
             </div>
           </div>
@@ -233,7 +161,7 @@ export default function DashboardPage() {
             <div className="mt-4 space-y-3">
               {topCategories.length > 0 ? (
                 topCategories.map((row) => {
-                  const rowPct = totalBudget > 0 ? Math.min(100, (row.realized_amount / totalBudget) * 100) : 0;
+                  const rowPct = (summary?.total_planned ?? 0) > 0 ? Math.min(100, (row.realized_amount / (summary?.total_planned ?? 1)) * 100) : 0;
                   return (
                     <div key={row.category_id}>
                       <div className="flex items-center justify-between gap-3 text-sm">
@@ -275,124 +203,65 @@ export default function DashboardPage() {
             </select>
             <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
             <button className="primary-button w-full" type="button" onClick={() => void loadData()}>
+              <CalendarRange size={16} />
               Atualizar
             </button>
           </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[0.68fr_1.32fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="glass-surface p-5 sm:p-6">
-          <div className="soft-label text-slate-400">Nova categoria</div>
-          <h2 className="mt-2 text-xl font-semibold text-white">Expanda seu mapa financeiro</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            Crie novas categorias para alimentar o dashboard, a comparação e os lançamentos.
-          </p>
-
-          <form onSubmit={createCategory} className="mt-5 space-y-3">
-            <input
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              placeholder="Ex: Mercado, Pet, Assinaturas"
-            />
-            <button className="primary-button w-full">
-              <Plus size={16} />
-              Criar categoria
-            </button>
-          </form>
-
-          {error && <p className="mt-4 rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
-          {loading && <p className="mt-4 text-sm text-slate-400">Carregando orçamentos...</p>}
+          <div className="soft-label text-slate-400">Pendências do mensal</div>
+          <h2 className="mt-2 text-xl font-semibold text-white">Próximos itens para resolver</h2>
+          <div className="mt-4 space-y-3">
+            {pendingItems.length > 0 ? (
+              pendingItems.map((item) => (
+                <div key={item.id} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="font-medium text-white">{item.title}</div>
+                      <p className="mt-1 text-sm text-slate-400">
+                        {item.assigned_to} · {item.section}
+                        {item.due_date ? ` · vence em ${item.due_date}` : ""}
+                      </p>
+                    </div>
+                    <span className="font-semibold text-white">{formatCurrency(item.expected_amount)}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-slate-950/20 p-5 text-sm text-slate-400">
+                Sem pendências abertas neste período.
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="glass-surface p-5 sm:p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <div className="soft-label text-slate-400">Categorias e metas</div>
-              <h2 className="mt-2 text-xl font-semibold text-white">Configure os valores previstos do mês</h2>
-            </div>
-            <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
-              {categories.length} itens
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            <AnimatePresence>
-              {categories.map((cat) => {
-                const budget = budgets.find((b) => b.category_id === cat.id);
-                const comparison = comparisonRows.find((row) => row.category_id === cat.id);
-                const spent = comparison?.realized_amount ?? 0;
-                const expected = budget?.expected_amount ?? 0;
-                const statusPct = expected > 0 ? Math.min(100, (spent / expected) * 100) : 0;
-                const exceeded = expected > 0 && spent > expected;
-                return (
-                  <motion.div
-                    key={cat.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4"
-                  >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div>
-                        <div className="text-base font-medium text-white">{categoryMap[cat.id] ?? "Categoria"}</div>
-                        <div className="mt-1 text-sm text-slate-400">
-                          {budget ? "Meta configurada para o período atual." : "Ainda sem orçamento para este mês."}
-                        </div>
-                      </div>
-                      {!budget && (
-                        <button
-                          onClick={() => createBudget(cat.id)}
-                          className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10"
-                        >
-                          Adicionar orçamento
-                        </button>
-                      )}
-                    </div>
-
-                    {budget && (
-                      <>
-                        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-                          <input
-                            type="number"
-                            step="0.01"
-                            placeholder="Valor previsto"
-                            value={budget.expected_amount ?? ""}
-                            onChange={(e) => void updateBudget(budget.id, { expected_amount: Number(e.target.value) })}
-                          />
-                          <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                            <input
-                              type="checkbox"
-                              checked={budget.is_fixed ?? false}
-                              onChange={(e) => void updateBudget(budget.id, { is_fixed: e.target.checked })}
-                            />
-                            Repetir como fixo
-                          </label>
-                        </div>
-                        <div className="mt-4 rounded-[1.25rem] border border-white/10 bg-slate-950/30 p-4">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <span className="text-sm text-slate-300">
-                              Realizado {formatCurrency(spent)} de {formatCurrency(expected)}
-                            </span>
-                            <span className={["text-xs font-medium", exceeded ? "text-rose-300" : "text-emerald-300"].join(" ")}>
-                              {expected > 0 ? `${statusPct.toFixed(0)}% usado` : "Sem orçamento definido"}
-                            </span>
-                          </div>
-                          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-900/80">
-                            <div
-                              className={exceeded ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-cyan-400"}
-                              style={{ width: `${statusPct}%` }}
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+          <div className="soft-label text-slate-400">Quem mais pagou no período</div>
+          <h2 className="mt-2 text-xl font-semibold text-white">Divisão real do mês</h2>
+          <div className="mt-4 space-y-3">
+            {paidBy.length > 0 ? (
+              paidBy.map((payer) => (
+                <div key={payer.user_id} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-200">{payer.label}</span>
+                    <span className="font-semibold text-white">{formatCurrency(payer.total)}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-slate-950/20 p-5 text-sm text-slate-400">
+                Ainda não existem lançamentos para dividir entre os cônjuges.
+              </div>
+            )}
           </div>
         </div>
       </section>
+
+      {error && <p className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
+      {loading && <p className="text-sm text-slate-400">Atualizando dashboard...</p>}
     </motion.div>
   );
 }

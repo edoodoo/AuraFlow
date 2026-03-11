@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, LayoutDashboard, LogOut, ReceiptText } from "lucide-react";
+import { BarChart3, CalendarDays, LayoutDashboard, LogOut, ReceiptText } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { BrandMark } from "./brand-mark";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/monthly-plan", label: "Mensal", icon: CalendarDays },
   { href: "/transactions", label: "Lançamentos", icon: ReceiptText },
   { href: "/comparison", label: "Comparação", icon: BarChart3 },
 ];
@@ -100,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav className="safe-bottom fixed inset-x-4 bottom-0 z-30 md:hidden">
-        <div className="glass-surface grid grid-cols-4 gap-2 px-3 py-3">
+        <div className="glass-surface grid grid-cols-5 gap-2 px-3 py-3">
           {links.map((link) => {
             const active = pathname === link.href;
             const Icon = link.icon;

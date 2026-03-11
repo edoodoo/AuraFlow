@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarRange, Plus, RefreshCw, Sparkles, Target, WalletCards } from "lucide-react";
+import { CalendarRange, Plus, RefreshCw, Sparkles, Target, TrendingUp, WalletCards } from "lucide-react";
 
 type Category = { id: string; name: string; user_id: string | null };
 type Budget = {
@@ -12,6 +12,13 @@ type Budget = {
   is_fixed: boolean;
   month: number;
   year: number;
+};
+type ComparisonRow = {
+  category_id: string;
+  category_name: string;
+  expected_amount: number;
+  realized_amount: number;
+  contributors: string[];
 };
 
 const now = new Date();
@@ -24,6 +31,7 @@ export default function DashboardPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [comparisonRows, setComparisonRows] = useState<ComparisonRow[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,19 +47,32 @@ export default function DashboardPage() {
   const totalBudget = useMemo(() => budgets.reduce((sum, budget) => sum + Number(budget.expected_amount || 0), 0), [budgets]);
   const fixedCount = useMemo(() => budgets.filter((budget) => budget.is_fixed).length, [budgets]);
   const categoriesWithBudget = useMemo(() => new Set(budgets.map((budget) => budget.category_id)).size, [budgets]);
+  const realizedTotal = useMemo(
+    () => comparisonRows.reduce((sum, row) => sum + Number(row.realized_amount || 0), 0),
+    [comparisonRows],
+  );
+  const remainingBudget = Math.max(totalBudget - realizedTotal, 0);
+  const usagePct = totalBudget > 0 ? Math.min(100, (realizedTotal / totalBudget) * 100) : 0;
+  const topCategories = useMemo(
+    () => [...comparisonRows].sort((a, b) => b.realized_amount - a.realized_amount).slice(0, 4),
+    [comparisonRows],
+  );
+  const budgetHealthLabel = realizedTotal > totalBudget ? "Acima do previsto" : usagePct > 80 ? "Atenção ao ritmo" : "Mês sob controle";
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [cRes, bRes] = await Promise.all([
+      const [cRes, bRes, comparisonRes] = await Promise.all([
         fetch("/api/categories", { cache: "no-store" }),
         fetch(`/api/monthly-budgets?month=${month}&year=${year}`, { cache: "no-store" }),
+        fetch(`/api/reports/comparison?month=${month}&year=${year}`, { cache: "no-store" }),
       ]);
-      if (!cRes.ok || !bRes.ok) throw new Error("Falha ao carregar dados.");
-      const [cData, bData] = await Promise.all([cRes.json(), bRes.json()]);
+      if (!cRes.ok || !bRes.ok || !comparisonRes.ok) throw new Error("Falha ao carregar dados.");
+      const [cData, bData, comparisonData] = await Promise.all([cRes.json(), bRes.json(), comparisonRes.json()]);
       setCategories(cData.categories ?? []);
       setBudgets(bData.budgets ?? []);
+      setComparisonRows(comparisonData.rows ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
     } finally {
@@ -179,6 +200,58 @@ export default function DashboardPage() {
             <p className="mt-3 text-sm text-slate-400">Base pronta para acompanhar o combinado do casal.</p>
           </div>
         </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+          <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="soft-label text-slate-400">Ritmo do mês</div>
+                <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(realizedTotal)}</div>
+                <p className="mt-1 text-sm text-slate-400">Realizado até agora de um total orçado de {formatCurrency(totalBudget)}.</p>
+              </div>
+              <div className="rounded-2xl bg-cyan-400/10 px-4 py-3 text-sm text-cyan-200">
+                {budgetHealthLabel}
+              </div>
+            </div>
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-900/70">
+              <div
+                className={realizedTotal > totalBudget ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-cyan-400"}
+                style={{ width: `${usagePct}%` }}
+              />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+              <span className="text-slate-400">{usagePct.toFixed(0)}% do orçamento utilizado</span>
+              <span className="font-medium text-white">Saldo restante: {formatCurrency(remainingBudget)}</span>
+            </div>
+          </div>
+
+          <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
+            <div className="flex items-center gap-2 text-white">
+              <TrendingUp size={18} className="text-emerald-300" />
+              <span className="font-semibold">Top categorias do mês</span>
+            </div>
+            <div className="mt-4 space-y-3">
+              {topCategories.length > 0 ? (
+                topCategories.map((row) => {
+                  const rowPct = totalBudget > 0 ? Math.min(100, (row.realized_amount / totalBudget) * 100) : 0;
+                  return (
+                    <div key={row.category_id}>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-slate-200">{row.category_name}</span>
+                        <span className="font-medium text-white">{formatCurrency(row.realized_amount)}</span>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-900/70">
+                        <div className="h-full rounded-full bg-emerald-400" style={{ width: `${rowPct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-slate-400">Sem dados de gasto para este período ainda.</p>
+              )}
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="glass-surface p-5 sm:p-6">
@@ -208,7 +281,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.72fr_1.28fr]">
+      <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[0.68fr_1.32fr]">
         <div className="glass-surface p-5 sm:p-6">
           <div className="soft-label text-slate-400">Nova categoria</div>
           <h2 className="mt-2 text-xl font-semibold text-white">Expanda seu mapa financeiro</h2>
@@ -247,6 +320,11 @@ export default function DashboardPage() {
             <AnimatePresence>
               {categories.map((cat) => {
                 const budget = budgets.find((b) => b.category_id === cat.id);
+                const comparison = comparisonRows.find((row) => row.category_id === cat.id);
+                const spent = comparison?.realized_amount ?? 0;
+                const expected = budget?.expected_amount ?? 0;
+                const statusPct = expected > 0 ? Math.min(100, (spent / expected) * 100) : 0;
+                const exceeded = expected > 0 && spent > expected;
                 return (
                   <motion.div
                     key={cat.id}
@@ -272,23 +350,41 @@ export default function DashboardPage() {
                     </div>
 
                     {budget && (
-                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="Valor previsto"
-                          value={budget.expected_amount ?? ""}
-                          onChange={(e) => void updateBudget(budget.id, { expected_amount: Number(e.target.value) })}
-                        />
-                        <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                      <>
+                        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
                           <input
-                            type="checkbox"
-                            checked={budget.is_fixed ?? false}
-                            onChange={(e) => void updateBudget(budget.id, { is_fixed: e.target.checked })}
+                            type="number"
+                            step="0.01"
+                            placeholder="Valor previsto"
+                            value={budget.expected_amount ?? ""}
+                            onChange={(e) => void updateBudget(budget.id, { expected_amount: Number(e.target.value) })}
                           />
-                          Repetir como fixo
-                        </label>
-                      </div>
+                          <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                            <input
+                              type="checkbox"
+                              checked={budget.is_fixed ?? false}
+                              onChange={(e) => void updateBudget(budget.id, { is_fixed: e.target.checked })}
+                            />
+                            Repetir como fixo
+                          </label>
+                        </div>
+                        <div className="mt-4 rounded-[1.25rem] border border-white/10 bg-slate-950/30 p-4">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <span className="text-sm text-slate-300">
+                              Realizado {formatCurrency(spent)} de {formatCurrency(expected)}
+                            </span>
+                            <span className={["text-xs font-medium", exceeded ? "text-rose-300" : "text-emerald-300"].join(" ")}>
+                              {expected > 0 ? `${statusPct.toFixed(0)}% usado` : "Sem orçamento definido"}
+                            </span>
+                          </div>
+                          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-900/80">
+                            <div
+                              className={exceeded ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-cyan-400"}
+                              style={{ width: `${statusPct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </>
                     )}
                   </motion.div>
                 );

@@ -99,7 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="min-w-0">{children}</main>
       </div>
 
-      <nav className="fixed inset-x-4 bottom-4 z-30 md:hidden">
+      <nav className="safe-bottom fixed inset-x-4 bottom-0 z-30 md:hidden">
         <div className="glass-surface grid grid-cols-4 gap-2 px-3 py-3">
           {links.map((link) => {
             const active = pathname === link.href;

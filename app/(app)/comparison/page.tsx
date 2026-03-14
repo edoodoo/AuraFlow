@@ -24,13 +24,21 @@ export default function ComparisonPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const res = await fetch(`/api/reports/comparison?month=${month}&year=${year}`, { cache: "no-store" });
-    const data = await res.json();
-    setRows(data.rows ?? []);
-    setLoading(false);
+    setError(null);
+    try {
+      const res = await fetch(`/api/reports/comparison?month=${month}&year=${year}`, { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Falha ao carregar comparação.");
+      setRows(data.rows ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro inesperado ao carregar comparação.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -67,6 +75,7 @@ export default function ComparisonPage() {
         </div>
       </div>
 
+      {error && <p className="mt-5 rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
       {loading ? (
         <p className="mt-5 text-sm text-slate-400">Carregando comparação...</p>
       ) : (

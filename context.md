@@ -155,15 +155,42 @@
   - navegação inferior e área segura (safe area)
 
 ## 10) Registro de execução do test plan (preencher na próxima conversa)
-- Passo 1: ...
-- Passo 2: ...
-- Passo 3: ...
-- ...
+
+### 10.1 Inspeção de código (2026-03-14) — realizada por agente
+- Dev server: rodando em `localhost:3000`, respondendo HTTP 200. ✅
+- Navegação (app-shell): 5 links confirmados (Dashboard, Mensal, Categorias, Lançamentos, Comparação) + botão Sair. ✅
+- Tela `Categorias`: agrupamento fixed/variable, lixeira só em `user_id != null`, categorias padrão sem lixeira. ✅
+- Tela `Mensal`: vínculo de cônjuge com validação de e-mail na base, 4 seções, exportar fixos, summary cards. ✅
+- Tela `Dashboard`: métricas Orçado/Fixos/Ritmo, Top categorias, Pendências, Divisão real. Sem `Categorias ativas` ou `Expanda seu mapa`. ✅
+- Tela `Lançamentos`: avulso / vinculado ao mensal, upload de recibo com `capture="environment"`. ✅
+- Tela `Comparação`: previsto vs realizado, payer_breakdown, itens pendentes por categoria. ✅
+- `refreshMonthlyPlanItemStatus`: atualiza status pending→partial→paid automaticamente após lançamento. ✅
+
+### 10.2 Bugs/pontos de atenção encontrados na inspeção
+- **Minor — Lançamentos:** `/api/monthly-plan` é carregado sem `month/year`, então os itens do mensal disponíveis no dropdown são sempre do mês atual. Se o usuário quiser lançar em mês retroativo, não verá os itens. Não é bloqueador, mas pode causar confusão.
+- **Minor — Comparação:** função `load()` não tem `try/catch` — se a API falhar, a tela fica em branco sem mensagem de erro. Não é bloqueador.
+
+### 10.3 Testes manuais (pendentes — a preencher pelo usuário)
+- 9.1 Login e navegação: [ ]
+- 9.2 Categorias: [ ]
+- 9.3 Mensal: [ ]
+- 9.4 Dashboard: [ ]
+- 9.5 Lançamentos: [ ]
+- 9.6 Reflexo no Mensal: [ ]
+- 9.7 Comparação: [ ]
+- 9.8 Segundo cônjuge: [ ]
+- 9.9 PWA / Mobile (iPhone): [ ]
+
 - Resultado final:
   - [ ] aprovado sem bloqueios
   - [ ] aprovado com ajustes
   - [ ] bloqueado (listar bugs críticos)
 
-## 11) Última atualização
-- Data: 2026-03-11
-- Status: contexto completo + test plan pronto para execução
+## 11) Próximos passos após testes manuais
+1. Corrigir os dois bugs minor encontrados (Lançamentos sem filtro de mês / Comparação sem error handling).
+2. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
+3. Refinar responsividade conforme feedback do teste no iPhone.
+
+## 12) Última atualização
+- Data: 2026-03-14
+- Status: inspeção de código concluída, 0 bugs críticos, 2 bugs minor registrados, testes manuais pendentes

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarRange, Sparkles, TrendingUp, WalletCards } from "lucide-react";
+import { ArrowRight, CalendarRange, ReceiptText, Sparkles, TrendingUp, WalletCards } from "lucide-react";
 
 const now = new Date();
 const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -15,6 +15,8 @@ type DashboardSummary = {
   total_realized: number;
   fixed_count: number;
   usage_pct: number;
+  avulso_total: number;
+  avulso_count: number;
   top_categories: Array<{ category_id: string; category_name: string; realized_amount: number }>;
   pending_items: Array<{
     id: string;
@@ -38,6 +40,7 @@ export default function DashboardPage() {
   const paidBy = summary?.paid_by ?? [];
   const topCategories = summary?.top_categories ?? [];
   const pendingItems = summary?.pending_items ?? [];
+  const avulsoTotal = summary?.avulso_total ?? 0;
   const remainingBudget = Math.max((summary?.total_planned ?? 0) - (summary?.total_realized ?? 0), 0);
   const budgetHealthLabel = useMemo(() => {
     if (!summary) return "Sem planejamento";
@@ -84,7 +87,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-[1.2fr_0.8fr] xl:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="metric-card">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -124,6 +127,20 @@ export default function DashboardPage() {
               </span>
             </div>
             <p className="mt-3 text-sm text-slate-400">{budgetHealthLabel}</p>
+          </div>
+          <div className="metric-card">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="soft-label text-slate-400">Gastos avulsos</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(avulsoTotal)}</div>
+              </div>
+              <span className="rounded-2xl bg-amber-400/10 p-3 text-amber-300">
+                <ReceiptText size={18} />
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-400">
+              Despesas fora do planejamento mensal registradas no periodo.
+            </p>
           </div>
         </div>
 

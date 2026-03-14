@@ -214,6 +214,25 @@
   - [x] correção implementada
   - [ ] revalidação manual pendente
 
+### 10.6 Retorno manual registrado em 2026-03-14
+- Novo ajuste de produto definido para `avulso`:
+  - lancamentos `avulso` devem continuar visiveis
+  - mas nao devem contaminar o `previsto vs realizado` do que foi planejado no `Mensal`
+- Decisao adotada:
+  - `Comparação`: manter avulso na mesma categoria, mas separado visualmente e sem marcar excesso por causa dele
+  - `Mensal`: adicionar bloco somente leitura `Gastos avulsos` abaixo de `Dívidas`
+  - `Dashboard`: adicionar card superior com o total de `Gastos avulsos`
+- Correção aplicada:
+  - agregacoes separadas no backend entre `linked_plan_item` e `avulso`
+  - `Ritmo do mês` passa a refletir apenas execucao do mensal
+  - `Gastos avulsos` passam a aparecer como resumo proprio no `Dashboard`
+  - `Mensal` passa a mostrar lista/resumo dos avulsos do periodo
+  - `Comparação` passa a mostrar `avulso` separado, sem falso positivo de categoria excedida
+- Status desse ponto:
+  - [x] bug identificado
+  - [x] correção implementada
+  - [ ] revalidação manual pendente
+
 - Resultado final:
   - [ ] aprovado sem bloqueios
   - [ ] aprovado com ajustes
@@ -222,10 +241,11 @@
 ## 11) Próximos passos após testes manuais
 1. Revalidar `9.3 Mensal` após a correção de validação inline e feedback local.
 2. Revalidar `9.7 Comparação` e o fluxo de `Lançamentos` apos o bloqueio de pagamento excedente.
-3. Continuar o test plan a partir de `9.4 Dashboard`.
-4. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
-5. Refinar responsividade conforme feedback do teste no iPhone.
+3. Revalidar `Dashboard`, `Mensal` e `Comparação` apos a separacao de `Gastos avulsos`.
+4. Continuar o test plan a partir de `9.4 Dashboard`.
+5. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
+6. Refinar responsividade conforme feedback do teste no iPhone.
 
 ## 12) Última atualização
 - Data: 2026-03-14
-- Status: inspeção de código concluída, bugs reais confirmados em `9.3 Mensal` e `9.7 Comparação`, correções aplicadas, revalidação manual pendente
+- Status: inspeção de código concluída, bugs reais confirmados em `9.3 Mensal`, `9.7 Comparação` e no tratamento de `avulso`, correções aplicadas, revalidação manual pendente

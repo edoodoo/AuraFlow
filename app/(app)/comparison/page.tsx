@@ -8,6 +8,8 @@ type Row = {
   category_name: string;
   section: string;
   expected_amount: number;
+  linked_realized_amount: number;
+  avulso_realized_amount: number;
   realized_amount: number;
   contributors: string[];
   items_pending: number;
@@ -81,8 +83,10 @@ export default function ComparisonPage() {
       ) : (
         <div className="mt-5 space-y-3">
           {rows.map((row) => {
-            const pct = row.expected_amount > 0 ? (row.realized_amount / row.expected_amount) * 100 : 0;
-            const exceeded = row.realized_amount > row.expected_amount;
+            const pct = row.expected_amount > 0 ? (row.linked_realized_amount / row.expected_amount) * 100 : 0;
+            const exceeded = row.linked_realized_amount > row.expected_amount;
+            const hasAvulso = row.avulso_realized_amount > 0;
+            const isOnlyAvulso = row.expected_amount <= 0 && row.linked_realized_amount <= 0 && hasAvulso;
             return (
               <div
                 key={row.category_id}
@@ -109,6 +113,11 @@ export default function ComparisonPage() {
                     <p className="mt-1 text-xs text-slate-500">
                       Seção: {row.section} · Itens ainda pendentes: {row.items_pending}
                     </p>
+                    {hasAvulso && (
+                      <div className="mt-3 inline-flex rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-200">
+                        Avulso fora do mensal: {formatCurrency(row.avulso_realized_amount)}
+                      </div>
+                    )}
                     {row.payer_breakdown.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-2 text-xs">
                         {row.payer_breakdown.map((payer) => (
@@ -120,7 +129,9 @@ export default function ComparisonPage() {
                     )}
                   </div>
                   <span className={["text-sm font-semibold", exceeded ? "text-rose-300" : "text-white"].join(" ")}>
-                    {formatCurrency(row.realized_amount)} / {formatCurrency(row.expected_amount)}
+                    {isOnlyAvulso
+                      ? `Avulso ${formatCurrency(row.avulso_realized_amount)}`
+                      : `${formatCurrency(row.linked_realized_amount)} / ${formatCurrency(row.expected_amount)}`}
                   </span>
                 </div>
 
@@ -132,7 +143,9 @@ export default function ComparisonPage() {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between gap-3 text-xs">
-                  <span className="text-slate-400">{pct.toFixed(0)}% do orçamento utilizado</span>
+                  <span className="text-slate-400">
+                    {isOnlyAvulso ? "Sem orçamento mensal para comparar" : `${pct.toFixed(0)}% do orçamento utilizado`}
+                  </span>
                   {exceeded && <span className="font-medium text-rose-300">Atenção: categoria excedida</span>}
                 </div>
               </div>

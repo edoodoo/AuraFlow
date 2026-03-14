@@ -60,6 +60,15 @@ export type LinkedPaymentState = {
   remaining_amount: number;
 };
 
+type MonthlySummaryAvulsoTransaction = {
+  id: string;
+  category_name: string;
+  description: string | null;
+  amount: number;
+  transaction_date: string;
+  user_label: string;
+};
+
 export function getMonthDateRange(month: number, year: number) {
   const start = new Date(Date.UTC(year, month - 1, 1));
   const end = new Date(Date.UTC(year, month, 0));
@@ -237,12 +246,15 @@ export function buildMonthlySummary(
   transactions: HouseholdTransaction[],
   memberLabels: Record<string, string>,
 ) {
+  const linkedTransactions = transactions.filter((transaction) => transaction.transaction_kind === "linked_plan_item");
+  const avulsoTransactions = transactions.filter((transaction) => transaction.transaction_kind === "avulso");
   const totalPlanned = items.reduce((sum, item) => sum + Number(item.expected_amount || 0), 0);
-  const totalRealized = transactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+  const totalRealized = linkedTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+  const avulsoTotal = avulsoTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
   const fixedCount = items.filter((item) => item.is_fixed).length;
   const topCategoryMap = new Map<string, { category_name: string; realized_amount: number }>();
 
-  for (const transaction of transactions) {
+  for (const transaction of linkedTransactions) {
     const categoryName = getCategoryName(transaction.category);
     const current = topCategoryMap.get(transaction.category_id) ?? {
       category_name: categoryName,
@@ -277,7 +289,7 @@ export function buildMonthlySummary(
     section.item_count += 1;
   }
 
-  for (const transaction of transactions) {
+  for (const transaction of linkedTransactions) {
     const item = transaction.monthly_plan_item_id ? items.find((candidate) => candidate.id === transaction.monthly_plan_item_id) : null;
     const sectionKey = item?.section ?? "general";
     const section = sectionMap.get(sectionKey)!;
@@ -285,10 +297,21 @@ export function buildMonthlySummary(
   }
 
   const paidByMap = new Map<string, number>();
-  for (const transaction of transactions) {
+  for (const transaction of linkedTransactions) {
     const current = paidByMap.get(transaction.user_id) ?? 0;
     paidByMap.set(transaction.user_id, current + Number(transaction.amount || 0));
   }
+
+  const avulsoItems: MonthlySummaryAvulsoTransaction[] = [...avulsoTransactions]
+    .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+    .map((transaction) => ({
+      id: transaction.id,
+      category_name: getCategoryName(transaction.category),
+      description: transaction.description,
+      amount: Number(transaction.amount || 0),
+      transaction_date: transaction.transaction_date,
+      user_label: memberLabels[transaction.user_id] ?? "Usuário",
+    }));
 
   return {
     total_planned: totalPlanned,
@@ -313,6 +336,9 @@ export function buildMonthlySummary(
       label: memberLabels[user_id] ?? "Usuário",
       total,
     })),
+    avulso_total: avulsoTotal,
+    avulso_count: avulsoItems.length,
+    avulso_transactions: avulsoItems,
   };
 }
 
@@ -326,8 +352,10 @@ export function buildComparisonRows(
     {
       category_id: string;
       category_name: string;
-      section: PlanSection;
+      section: string;
       expected_amount: number;
+      linked_realized_amount: number;
+      avulso_realized_amount: number;
       realized_amount: number;
       contributors: string[];
       items_pending: number;
@@ -344,6 +372,8 @@ export function buildComparisonRows(
       category_name: categoryName,
       section: item.section,
       expected_amount: 0,
+      linked_realized_amount: 0,
+      avulso_realized_amount: 0,
       realized_amount: 0,
       contributors: [],
       items_pending: 0,
@@ -364,14 +394,22 @@ export function buildComparisonRows(
     const current = rows.get(categoryId) ?? {
       category_id: categoryId,
       category_name: categoryName,
-      section: item?.section ?? "general",
+      section: item?.section ?? "Avulso",
       expected_amount: 0,
+      linked_realized_amount: 0,
+      avulso_realized_amount: 0,
       realized_amount: 0,
       contributors: [],
       items_pending: 0,
         payer_breakdown: [],
     };
-    current.realized_amount += Number(transaction.amount || 0);
+    const amount = Number(transaction.amount || 0);
+    current.realized_amount += amount;
+    if (transaction.transaction_kind === "linked_plan_item") {
+      current.linked_realized_amount += amount;
+    } else {
+      current.avulso_realized_amount += amount;
+    }
     const contributorLabel = memberLabels[transaction.user_id] ?? "Usuário";
     if (!current.contributors.includes(contributorLabel)) {
       current.contributors.push(contributorLabel);

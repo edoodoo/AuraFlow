@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CalendarRange, Link2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowRight, CalendarRange, Link2, Plus, ReceiptText, RefreshCw, Trash2 } from "lucide-react";
 
 type Category = {
   id: string;
@@ -52,6 +52,16 @@ type Summary = {
   fixed_count: number;
   usage_pct: number;
   sections: Array<{ key: SectionKey; label: string; planned: number; realized: number; item_count: number }>;
+  avulso_total: number;
+  avulso_count: number;
+  avulso_transactions: Array<{
+    id: string;
+    category_name: string;
+    description: string | null;
+    amount: number;
+    transaction_date: string;
+    user_label: string;
+  }>;
 };
 
 type ApiPayload = {
@@ -818,6 +828,59 @@ export default function MonthlyPlanPage() {
             </div>
           </div>
         ))}
+
+        <div className="glass-surface p-5 sm:p-6">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="soft-label text-slate-400">Fora do planejamento</div>
+              <h3 className="mt-2 text-2xl font-semibold text-white">Gastos avulsos</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Lancamentos avulsos do mes ficam visiveis aqui sem contaminar as contas planejadas do mensal.
+              </p>
+            </div>
+            <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+              {summary?.avulso_count ?? 0} lancamentos
+            </span>
+          </div>
+
+          <div className="mt-5 rounded-[1.6rem] border border-amber-400/15 bg-amber-400/10 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-white">
+                <ReceiptText size={18} className="text-amber-300" />
+                <span className="font-semibold">Total avulso do periodo</span>
+              </div>
+              <span className="text-lg font-semibold text-white">{formatCurrency(summary?.avulso_total ?? 0)}</span>
+            </div>
+            <p className="mt-2 text-sm text-amber-100/80">
+              Quando um valor nao pertence a nenhuma conta do mensal, ele entra como gasto avulso e fica separado da execucao planejada.
+            </p>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {(summary?.avulso_transactions ?? []).map((transaction) => (
+              <div key={transaction.id} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="font-medium text-white">{transaction.category_name}</div>
+                    <p className="mt-1 text-sm text-slate-400">
+                      {transaction.description || "Sem descricao informada"}
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {transaction.user_label} · {transaction.transaction_date}
+                    </p>
+                  </div>
+                  <span className="text-base font-semibold text-white">{formatCurrency(transaction.amount)}</span>
+                </div>
+              </div>
+            ))}
+
+            {(summary?.avulso_transactions ?? []).length === 0 && (
+              <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-slate-950/20 p-5 text-sm text-slate-400">
+                Nenhum gasto avulso registrado neste periodo.
+              </div>
+            )}
+          </div>
+        </div>
       </section>
     </motion.div>
   );

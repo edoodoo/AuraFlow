@@ -26,13 +26,16 @@ export async function GET(req: Request) {
         pending_items: [],
         sections: [],
         paid_by: [],
+        avulso_total: 0,
+        avulso_count: 0,
+        avulso_transactions: [],
       },
     });
   }
 
   const plan = await getMonthlyPlan(context, month, year);
   const items = plan ? await listMonthlyPlanItems(plan.id) : [];
-  const transactions = plan ? await listHouseholdTransactions(context, month, year) : [];
+  const transactions = await listHouseholdTransactions(context, month, year);
   const memberLabels = Object.fromEntries(
     context.household.members.map((member) => [member.user_id, member.email ?? "Usuário"]),
   );

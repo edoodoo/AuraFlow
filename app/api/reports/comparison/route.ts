@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
   const plan = await getMonthlyPlan(context, month, year);
   const items = plan ? await listMonthlyPlanItems(plan.id) : [];
-  const transactions = plan ? await listHouseholdTransactions(context, month, year) : [];
+  const transactions = await listHouseholdTransactions(context, month, year);
   const memberLabels = Object.fromEntries(
     context.household.members.map((member) => [member.user_id, member.email ?? "Usuário"]),
   );

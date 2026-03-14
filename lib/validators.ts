@@ -40,13 +40,13 @@ export const monthlyPlanRequestSchema = z.object({
 
 export const monthlyPlanItemSchema = z.object({
   monthly_plan_id: z.string().uuid(),
-  category_id: z.string().uuid().nullable().optional(),
+  category_id: z.string().uuid(),
   title: z.string().trim().min(2).max(120),
   section: z.enum(["general", "investments", "emergency_reserve", "debts"]),
-  expected_amount: z.number().min(0),
+  expected_amount: z.number().positive(),
   is_fixed: z.boolean().default(false),
-  due_date: z.string().nullable().optional(),
-  assigned_user_id: z.string().uuid().nullable().optional(),
+  due_date: z.string().min(1),
+  assigned_user_id: z.string().uuid(),
   notes: z.string().trim().max(255).nullable().optional(),
 });
 

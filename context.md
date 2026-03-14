@@ -181,16 +181,32 @@
 - 9.8 Segundo cônjuge: [ ]
 - 9.9 PWA / Mobile (iPhone): [ ]
 
+### 10.4 Retorno manual registrado em 2026-03-14
+- `9.3 Mensal` revelou bug real de UX/validação ao criar itens.
+- Sintoma encontrado: era possível cadastrar conta apenas com título, sem valor, categoria, data ou responsável.
+- Sintoma encontrado: a mensagem de erro ficava apenas no topo da página, obrigando o usuário a procurar o problema nas seções mais abaixo (`Investimentos`, `Dívidas`, etc.).
+- Correção aplicada:
+  - validação inline no front para `título`, `categoria`, `valor`, `data` e `responsável`
+  - destaque visual com borda vermelha nos campos inválidos
+  - mensagem local dentro da própria seção/item com erro
+  - foco e scroll automático para o primeiro campo inválido
+  - validação reforçada também no backend (`lib/validators.ts`)
+- Status desse ponto:
+  - [x] bug identificado
+  - [x] correção implementada
+  - [ ] revalidação manual pendente
+
 - Resultado final:
   - [ ] aprovado sem bloqueios
   - [ ] aprovado com ajustes
   - [ ] bloqueado (listar bugs críticos)
 
 ## 11) Próximos passos após testes manuais
-1. Corrigir os dois bugs minor encontrados (Lançamentos sem filtro de mês / Comparação sem error handling).
-2. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
-3. Refinar responsividade conforme feedback do teste no iPhone.
+1. Revalidar `9.3 Mensal` após a correção de validação inline e feedback local.
+2. Continuar o test plan a partir de `9.4 Dashboard`.
+3. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
+4. Refinar responsividade conforme feedback do teste no iPhone.
 
 ## 12) Última atualização
 - Data: 2026-03-14
-- Status: inspeção de código concluída, 0 bugs críticos, 2 bugs minor registrados, testes manuais pendentes
+- Status: inspeção de código concluída, bug real confirmado em `9.3 Mensal`, correção aplicada, revalidação manual pendente

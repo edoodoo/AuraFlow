@@ -74,6 +74,8 @@ type ItemDraft = {
 };
 
 type SectionKey = "general" | "investments" | "emergency_reserve" | "debts";
+type ItemFieldKey = "title" | "category_id" | "expected_amount" | "due_date" | "assigned_user_id";
+type ItemFieldErrors = Partial<Record<ItemFieldKey, string>>;
 
 const now = new Date();
 const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -86,6 +88,8 @@ const sections: Array<{ key: SectionKey; label: string; helper: string }> = [
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
+
+const fieldErrorClass = "border-rose-400/70 ring-1 ring-rose-400/40 focus:border-rose-300 focus:ring-rose-300/40";
 
 function getCategoryName(category: PlanItem["category"]) {
   if (Array.isArray(category)) return category[0]?.name ?? "Sem categoria";
@@ -102,6 +106,53 @@ function createBlankItemDraft(): ItemDraft {
     assigned_user_id: "",
     notes: "",
   };
+}
+
+function createBlankFieldErrors(): ItemFieldErrors {
+  return {};
+}
+
+function validateItemDraft(draft: ItemDraft): ItemFieldErrors {
+  const errors: ItemFieldErrors = {};
+
+  if (!draft.title.trim()) {
+    errors.title = "Informe o título.";
+  } else if (draft.title.trim().length < 2) {
+    errors.title = "Use pelo menos 2 caracteres.";
+  }
+
+  if (!draft.category_id) {
+    errors.category_id = "Selecione a categoria.";
+  }
+
+  if (!draft.expected_amount.trim()) {
+    errors.expected_amount = "Informe o valor.";
+  } else if (Number(draft.expected_amount) <= 0) {
+    errors.expected_amount = "Use um valor maior que zero.";
+  }
+
+  if (!draft.due_date) {
+    errors.due_date = "Informe a data.";
+  }
+
+  if (!draft.assigned_user_id) {
+    errors.assigned_user_id = "Selecione o responsável.";
+  }
+
+  return errors;
+}
+
+function getDraftInputClass(hasError: boolean) {
+  return hasError ? fieldErrorClass : undefined;
+}
+
+function focusFirstInvalidField(scope: string, errors: ItemFieldErrors) {
+  const firstField = (Object.keys(errors) as ItemFieldKey[])[0];
+  if (!firstField || typeof document === "undefined") return;
+
+  const element = document.querySelector<HTMLElement>(`[data-item-scope="${scope}"][data-field="${firstField}"]`);
+  element?.focus();
+  element?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 export default function MonthlyPlanPage() {
@@ -124,6 +175,15 @@ export default function MonthlyPlanPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [newItemErrors, setNewItemErrors] = useState<Record<SectionKey, ItemFieldErrors>>({
+    general: createBlankFieldErrors(),
+    investments: createBlankFieldErrors(),
+    emergency_reserve: createBlankFieldErrors(),
+    debts: createBlankFieldErrors(),
+  });
+  const [sectionErrors, setSectionErrors] = useState<Partial<Record<SectionKey, string>>>({});
+  const [itemErrors, setItemErrors] = useState<Record<string, ItemFieldErrors>>({});
+  const [itemErrorMessages, setItemErrorMessages] = useState<Record<string, string>>({});
 
   const groupedItems = useMemo(
     () =>
@@ -222,8 +282,20 @@ export default function MonthlyPlanPage() {
     }
 
     const draft = newItems[section];
+    const validationErrors = validateItemDraft(draft);
+    if (Object.keys(validationErrors).length > 0) {
+      setNewItemErrors((prev) => ({ ...prev, [section]: validationErrors }));
+      setSectionErrors((prev) => ({
+        ...prev,
+        [section]: "Preencha os campos destacados antes de adicionar o item.",
+      }));
+      focusFirstInvalidField(`new-${section}`, validationErrors);
+      return;
+    }
+
     setSaving(true);
     setError(null);
+    setSectionErrors((prev) => ({ ...prev, [section]: undefined }));
     try {
       const res = await fetch("/api/monthly-plan/items", {
         method: "POST",
@@ -247,9 +319,13 @@ export default function MonthlyPlanPage() {
         ...prev,
         [section]: createBlankItemDraft(),
       }));
+      setNewItemErrors((prev) => ({ ...prev, [section]: createBlankFieldErrors() }));
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível criar o item.");
+      setSectionErrors((prev) => ({
+        ...prev,
+        [section]: err instanceof Error ? err.message : "Não foi possível criar o item.",
+      }));
     } finally {
       setSaving(false);
     }
@@ -257,8 +333,20 @@ export default function MonthlyPlanPage() {
 
   const saveItem = async (itemId: string) => {
     const draft = itemDrafts[itemId];
+    const validationErrors = validateItemDraft(draft);
+    if (Object.keys(validationErrors).length > 0) {
+      setItemErrors((prev) => ({ ...prev, [itemId]: validationErrors }));
+      setItemErrorMessages((prev) => ({
+        ...prev,
+        [itemId]: "Preencha os campos destacados antes de salvar o item.",
+      }));
+      focusFirstInvalidField(`item-${itemId}`, validationErrors);
+      return;
+    }
+
     setSaving(true);
     setError(null);
+    setItemErrorMessages((prev) => ({ ...prev, [itemId]: "" }));
     try {
       const res = await fetch(`/api/monthly-plan/items/${itemId}`, {
         method: "PUT",
@@ -275,9 +363,13 @@ export default function MonthlyPlanPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível atualizar o item.");
+      setItemErrors((prev) => ({ ...prev, [itemId]: createBlankFieldErrors() }));
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível atualizar o item.");
+      setItemErrorMessages((prev) => ({
+        ...prev,
+        [itemId]: err instanceof Error ? err.message : "Não foi possível atualizar o item.",
+      }));
     } finally {
       setSaving(false);
     }
@@ -334,6 +426,16 @@ export default function MonthlyPlanPage() {
         ...patch,
       },
     }));
+    if (Object.keys(patch).length > 0) {
+      setItemErrors((prev) => {
+        const current = { ...(prev[itemId] ?? {}) };
+        for (const key of Object.keys(patch) as ItemFieldKey[]) {
+          delete current[key];
+        }
+        return { ...prev, [itemId]: current };
+      });
+      setItemErrorMessages((prev) => ({ ...prev, [itemId]: "" }));
+    }
   };
 
   const updateNewItem = (section: SectionKey, patch: Partial<ItemDraft>) => {
@@ -344,6 +446,16 @@ export default function MonthlyPlanPage() {
         ...patch,
       },
     }));
+    if (Object.keys(patch).length > 0) {
+      setNewItemErrors((prev) => {
+        const current = { ...(prev[section] ?? {}) };
+        for (const key of Object.keys(patch) as ItemFieldKey[]) {
+          delete current[key];
+        }
+        return { ...prev, [section]: current };
+      });
+      setSectionErrors((prev) => ({ ...prev, [section]: undefined }));
+    }
   };
 
   return (
@@ -493,15 +605,21 @@ export default function MonthlyPlanPage() {
             <div className="mt-5 rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_1fr_0.8fr_0.8fr_1fr_auto]">
                 <input
+                  data-item-scope={`new-${section.key}`}
+                  data-field="title"
                   placeholder="Título do item"
                   value={newItems[section.key].title}
                   onChange={(e) => updateNewItem(section.key, { title: e.target.value })}
+                  className={getDraftInputClass(Boolean(newItemErrors[section.key].title))}
                 />
                 <select
+                  data-item-scope={`new-${section.key}`}
+                  data-field="category_id"
                   value={newItems[section.key].category_id}
                   onChange={(e) => updateNewItem(section.key, { category_id: e.target.value })}
+                  className={getDraftInputClass(Boolean(newItemErrors[section.key].category_id))}
                 >
-                  <option value="">Sem categoria</option>
+                  <option value="">Selecione a categoria</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name} · {category.category_kind === "fixed" ? "fixo" : "variável"}
@@ -509,22 +627,31 @@ export default function MonthlyPlanPage() {
                   ))}
                 </select>
                 <input
+                  data-item-scope={`new-${section.key}`}
+                  data-field="expected_amount"
                   type="number"
                   step="0.01"
                   placeholder="Valor previsto"
                   value={newItems[section.key].expected_amount}
                   onChange={(e) => updateNewItem(section.key, { expected_amount: e.target.value })}
+                  className={getDraftInputClass(Boolean(newItemErrors[section.key].expected_amount))}
                 />
                 <input
+                  data-item-scope={`new-${section.key}`}
+                  data-field="due_date"
                   type="date"
                   value={newItems[section.key].due_date}
                   onChange={(e) => updateNewItem(section.key, { due_date: e.target.value })}
+                  className={getDraftInputClass(Boolean(newItemErrors[section.key].due_date))}
                 />
                 <select
+                  data-item-scope={`new-${section.key}`}
+                  data-field="assigned_user_id"
                   value={newItems[section.key].assigned_user_id}
                   onChange={(e) => updateNewItem(section.key, { assigned_user_id: e.target.value })}
+                  className={getDraftInputClass(Boolean(newItemErrors[section.key].assigned_user_id))}
                 >
-                  <option value="">Sem responsável</option>
+                  <option value="">Selecione o responsável</option>
                   {memberOptions.map((member) => (
                     <option key={member.user_id} value={member.user_id}>
                       {member.label}
@@ -552,12 +679,18 @@ export default function MonthlyPlanPage() {
                   onChange={(e) => updateNewItem(section.key, { notes: e.target.value })}
                 />
               </div>
+              {sectionErrors[section.key] && (
+                <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                  {sectionErrors[section.key]}
+                </p>
+              )}
             </div>
 
             <div className="mt-5 space-y-3">
               <AnimatePresence>
                 {section.items.map((item) => {
                   const draft = itemDrafts[item.id] ?? createBlankItemDraft();
+                  const currentItemErrors = itemErrors[item.id] ?? {};
                   return (
                     <motion.div
                       key={item.id}
@@ -566,9 +699,21 @@ export default function MonthlyPlanPage() {
                       className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4"
                     >
                       <div className="grid grid-cols-1 gap-3 2xl:grid-cols-[1.1fr_0.9fr_0.7fr_0.7fr_0.9fr_auto]">
-                        <input value={draft.title} onChange={(e) => updateDraft(item.id, { title: e.target.value })} />
-                        <select value={draft.category_id} onChange={(e) => updateDraft(item.id, { category_id: e.target.value })}>
-                          <option value="">Sem categoria</option>
+                        <input
+                          data-item-scope={`item-${item.id}`}
+                          data-field="title"
+                          value={draft.title}
+                          onChange={(e) => updateDraft(item.id, { title: e.target.value })}
+                          className={getDraftInputClass(Boolean(currentItemErrors.title))}
+                        />
+                        <select
+                          data-item-scope={`item-${item.id}`}
+                          data-field="category_id"
+                          value={draft.category_id}
+                          onChange={(e) => updateDraft(item.id, { category_id: e.target.value })}
+                          className={getDraftInputClass(Boolean(currentItemErrors.category_id))}
+                        >
+                          <option value="">Selecione a categoria</option>
                           {categories.map((category) => (
                             <option key={category.id} value={category.id}>
                               {category.name} · {category.category_kind === "fixed" ? "fixo" : "variável"}
@@ -576,14 +721,30 @@ export default function MonthlyPlanPage() {
                           ))}
                         </select>
                         <input
+                          data-item-scope={`item-${item.id}`}
+                          data-field="expected_amount"
                           type="number"
                           step="0.01"
                           value={draft.expected_amount}
                           onChange={(e) => updateDraft(item.id, { expected_amount: e.target.value })}
+                          className={getDraftInputClass(Boolean(currentItemErrors.expected_amount))}
                         />
-                        <input type="date" value={draft.due_date} onChange={(e) => updateDraft(item.id, { due_date: e.target.value })} />
-                        <select value={draft.assigned_user_id} onChange={(e) => updateDraft(item.id, { assigned_user_id: e.target.value })}>
-                          <option value="">Sem responsável</option>
+                        <input
+                          data-item-scope={`item-${item.id}`}
+                          data-field="due_date"
+                          type="date"
+                          value={draft.due_date}
+                          onChange={(e) => updateDraft(item.id, { due_date: e.target.value })}
+                          className={getDraftInputClass(Boolean(currentItemErrors.due_date))}
+                        />
+                        <select
+                          data-item-scope={`item-${item.id}`}
+                          data-field="assigned_user_id"
+                          value={draft.assigned_user_id}
+                          onChange={(e) => updateDraft(item.id, { assigned_user_id: e.target.value })}
+                          className={getDraftInputClass(Boolean(currentItemErrors.assigned_user_id))}
+                        >
+                          <option value="">Selecione o responsável</option>
                           {memberOptions.map((member) => (
                             <option key={member.user_id} value={member.user_id}>
                               {member.label}
@@ -594,6 +755,12 @@ export default function MonthlyPlanPage() {
                           Salvar
                         </button>
                       </div>
+
+                      {itemErrorMessages[item.id] && (
+                        <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                          {itemErrorMessages[item.id]}
+                        </p>
+                      )}
 
                       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[auto_1fr_auto_auto] lg:items-center">
                         <label className="flex items-center gap-2 text-sm text-slate-300">

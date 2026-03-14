@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUserForRoute } from "@/lib/auth";
 import { getHouseholdContext } from "@/lib/household";
-import { buildMonthlySummary, getMonthlyPlan, listHouseholdTransactions, listMonthlyPlanItems } from "@/lib/monthly-plan";
+import { buildMonthlySummary, getMonthlyHouseholdIncome, getMonthlyPlan, listHouseholdTransactions, listMonthlyPlanItems } from "@/lib/monthly-plan";
 
 export async function GET(req: Request) {
   const { user, response } = await requireUserForRoute();
@@ -29,6 +29,9 @@ export async function GET(req: Request) {
         avulso_total: 0,
         avulso_count: 0,
         avulso_transactions: [],
+        monthly_income: null,
+        planned_balance: null,
+        available_balance: null,
       },
     });
   }
@@ -36,6 +39,7 @@ export async function GET(req: Request) {
   const plan = await getMonthlyPlan(context, month, year);
   const items = plan ? await listMonthlyPlanItems(plan.id) : [];
   const transactions = await listHouseholdTransactions(context, month, year);
+  const monthlyIncome = await getMonthlyHouseholdIncome(context, month, year);
   const memberLabels = Object.fromEntries(
     context.household.members.map((member) => [member.user_id, member.email ?? "Usuário"]),
   );
@@ -43,6 +47,6 @@ export async function GET(req: Request) {
   return NextResponse.json({
     household: context.household,
     plan,
-    summary: buildMonthlySummary(items, transactions, memberLabels),
+    summary: buildMonthlySummary(items, transactions, memberLabels, monthlyIncome?.income_amount ?? null),
   });
 }

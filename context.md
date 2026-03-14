@@ -233,6 +233,26 @@
   - [x] correção implementada
   - [ ] revalidação manual pendente
 
+### 10.7 Evolução registrada em 2026-03-14
+- Nova melhoria de produto definida:
+  - adicionar `Renda total do casal no mês` como dado obrigatório por periodo
+  - considerar salarios + extras do casal
+  - permitir edição ao longo do mes caso entrem novos valores
+- UX adotada:
+  - bloco editável no topo do `Mensal`
+  - cards do `Mensal`: `Planejado`, `Realizado`, `Avulsos`, `Saldo disponível`
+  - `Dashboard` com card `Entradas do mês` e card `Saldo livre`
+- Regra de cálculo implementada:
+  - `Planejado` = soma dos itens do mensal
+  - `Realizado` = soma dos pagamentos vinculados ao mensal
+  - `Avulsos` = soma dos lancamentos avulsos
+  - `Saldo disponível` = renda mensal - realizado - avulsos
+  - `Saldo previsto` = renda mensal - planejado
+- Status desse ponto:
+  - [x] modelagem definida
+  - [x] correção implementada
+  - [ ] revalidação manual pendente
+
 - Resultado final:
   - [ ] aprovado sem bloqueios
   - [ ] aprovado com ajustes
@@ -242,10 +262,11 @@
 1. Revalidar `9.3 Mensal` após a correção de validação inline e feedback local.
 2. Revalidar `9.7 Comparação` e o fluxo de `Lançamentos` apos o bloqueio de pagamento excedente.
 3. Revalidar `Dashboard`, `Mensal` e `Comparação` apos a separacao de `Gastos avulsos`.
-4. Continuar o test plan a partir de `9.4 Dashboard`.
-5. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
-6. Refinar responsividade conforme feedback do teste no iPhone.
+4. Revalidar a nova leitura de `Renda mensal do casal` no `Mensal` e no `Dashboard`.
+5. Continuar o test plan a partir de `9.4 Dashboard`.
+6. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
+7. Refinar responsividade conforme feedback do teste no iPhone.
 
 ## 12) Última atualização
 - Data: 2026-03-14
-- Status: inspeção de código concluída, bugs reais confirmados em `9.3 Mensal`, `9.7 Comparação` e no tratamento de `avulso`, correções aplicadas, revalidação manual pendente
+- Status: inspeção de código concluída, bugs reais corrigidos e nova camada de leitura de renda mensal implementada; revalidação manual pendente

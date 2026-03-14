@@ -9,14 +9,19 @@ const now = new Date();
 const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
+const formatCurrencyOrFallback = (value: number | null | undefined, fallback: string) =>
+  value === null || value === undefined ? fallback : formatCurrency(value);
 
 type DashboardSummary = {
+  monthly_income: number | null;
   total_planned: number;
   total_realized: number;
   fixed_count: number;
   usage_pct: number;
   avulso_total: number;
   avulso_count: number;
+  planned_balance: number | null;
+  available_balance: number | null;
   top_categories: Array<{ category_id: string; category_name: string; realized_amount: number }>;
   pending_items: Array<{
     id: string;
@@ -40,8 +45,9 @@ export default function DashboardPage() {
   const paidBy = summary?.paid_by ?? [];
   const topCategories = summary?.top_categories ?? [];
   const pendingItems = summary?.pending_items ?? [];
+  const monthlyIncome = summary?.monthly_income ?? null;
   const avulsoTotal = summary?.avulso_total ?? 0;
-  const remainingBudget = Math.max((summary?.total_planned ?? 0) - (summary?.total_realized ?? 0), 0);
+  const availableBalance = summary?.available_balance ?? null;
   const budgetHealthLabel = useMemo(() => {
     if (!summary) return "Sem planejamento";
     if (summary.total_realized > summary.total_planned) return "Acima do previsto";
@@ -87,7 +93,19 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="metric-card">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="soft-label text-slate-400">Entradas do mês</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{formatCurrencyOrFallback(monthlyIncome, "Informe")}</div>
+              </div>
+              <span className="rounded-2xl bg-emerald-400/10 p-3 text-emerald-300">
+                <WalletCards size={18} />
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-400">Soma de salarios e extras do casal para o periodo.</p>
+          </div>
           <div className="metric-card">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -115,6 +133,18 @@ export default function DashboardPage() {
               </span>
             </div>
             <p className="mt-3 text-sm text-slate-400">Itens que podem ser exportados automaticamente para o mês seguinte.</p>
+          </div>
+          <div className="metric-card">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="soft-label text-slate-400">Saldo livre</div>
+                <div className="mt-3 text-3xl font-semibold text-white">{formatCurrencyOrFallback(availableBalance, "Informe")}</div>
+              </div>
+              <span className="rounded-2xl bg-cyan-400/10 p-3 text-cyan-300">
+                <Sparkles size={18} />
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-400">Entradas menos realizado do mensal e gastos avulsos.</p>
           </div>
           <div className="metric-card">
             <div className="flex items-start justify-between gap-3">
@@ -166,7 +196,9 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
               <span className="text-slate-400">{summary?.usage_pct?.toFixed(0) ?? 0}% do orçamento utilizado</span>
-              <span className="font-medium text-white">Saldo restante: {formatCurrency(remainingBudget)}</span>
+              <span className="font-medium text-white">
+                Saldo livre: {formatCurrencyOrFallback(availableBalance, "Informe a renda")}
+              </span>
             </div>
           </div>
 

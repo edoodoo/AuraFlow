@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUserForRoute } from "@/lib/auth";
 import { createOrUpdateHousehold, getHouseholdContext, listVisibleCategories } from "@/lib/household";
-import { buildMonthlySummary, getMonthlyPlan, getOrCreateMonthlyPlan, listHouseholdTransactions, listMonthlyPlanItems } from "@/lib/monthly-plan";
+import { buildMonthlySummary, getMonthlyHouseholdIncome, getMonthlyPlan, getOrCreateMonthlyPlan, listHouseholdTransactions, listMonthlyPlanItems } from "@/lib/monthly-plan";
 import { monthlyPlanRequestSchema } from "@/lib/validators";
 
 function getMonthAndYear(url: string) {
@@ -34,6 +34,7 @@ export async function GET(req: Request) {
   const plan = await getMonthlyPlan(context, month, year);
   const items = plan ? await listMonthlyPlanItems(plan.id) : [];
   const transactions = await listHouseholdTransactions(context, month, year);
+  const monthlyIncome = await getMonthlyHouseholdIncome(context, month, year);
   const memberLabels = Object.fromEntries(
     context.household.members.map((member) => [member.user_id, member.email ?? "Usuário"]),
   );
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
     categories,
     plan,
     items,
-    summary: buildMonthlySummary(items, transactions, memberLabels),
+    summary: buildMonthlySummary(items, transactions, memberLabels, monthlyIncome?.income_amount ?? null),
   });
 }
 
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
     const plan = await getOrCreateMonthlyPlan(householdContext, parsed.data.month, parsed.data.year);
     const items = await listMonthlyPlanItems(plan.id);
     const transactions = await listHouseholdTransactions(householdContext, parsed.data.month, parsed.data.year);
+    const monthlyIncome = await getMonthlyHouseholdIncome(householdContext, parsed.data.month, parsed.data.year);
     const categories = await listVisibleCategories(householdContext);
     const memberLabels = Object.fromEntries(
       (householdContext.household?.members ?? []).map((member) => [member.user_id, member.email ?? "Usuário"]),
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
       categories,
       plan,
       items,
-      summary: buildMonthlySummary(items, transactions, memberLabels),
+      summary: buildMonthlySummary(items, transactions, memberLabels, monthlyIncome?.income_amount ?? null),
     });
   } catch (error) {
     return NextResponse.json(

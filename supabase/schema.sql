@@ -213,6 +213,17 @@ create table if not exists public.monthly_plans (
   unique (household_id, month, year)
 );
 
+create table if not exists public.monthly_household_incomes (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  month int not null check (month between 1 and 12),
+  year int not null,
+  income_amount numeric(10, 2) not null check (income_amount > 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (household_id, month, year)
+);
+
 create table if not exists public.monthly_plan_items (
   id uuid primary key default gen_random_uuid(),
   monthly_plan_id uuid not null references public.monthly_plans(id) on delete cascade,
@@ -245,6 +256,11 @@ create trigger trg_monthly_plans_updated_at
 before update on public.monthly_plans
 for each row execute procedure public.set_updated_at();
 
+drop trigger if exists trg_monthly_household_incomes_updated_at on public.monthly_household_incomes;
+create trigger trg_monthly_household_incomes_updated_at
+before update on public.monthly_household_incomes
+for each row execute procedure public.set_updated_at();
+
 drop trigger if exists trg_monthly_plan_items_updated_at on public.monthly_plan_items;
 create trigger trg_monthly_plan_items_updated_at
 before update on public.monthly_plan_items
@@ -252,6 +268,7 @@ for each row execute procedure public.set_updated_at();
 
 create index if not exists idx_household_members_household on public.household_members(household_id);
 create index if not exists idx_monthly_plans_household_period on public.monthly_plans(household_id, year, month);
+create index if not exists idx_monthly_household_incomes_household_period on public.monthly_household_incomes(household_id, year, month);
 create index if not exists idx_monthly_plan_items_plan on public.monthly_plan_items(monthly_plan_id);
 create index if not exists idx_transactions_household_period on public.transactions(household_id, transaction_date);
 create index if not exists idx_transactions_plan_item on public.transactions(monthly_plan_item_id);
@@ -272,6 +289,7 @@ $$;
 alter table public.households enable row level security;
 alter table public.household_members enable row level security;
 alter table public.monthly_plans enable row level security;
+alter table public.monthly_household_incomes enable row level security;
 alter table public.monthly_plan_items enable row level security;
 
 drop policy if exists households_select on public.households;
@@ -330,6 +348,13 @@ using (
 
 drop policy if exists monthly_plans_all on public.monthly_plans;
 create policy monthly_plans_all on public.monthly_plans
+for all
+to authenticated
+using (public.is_household_member(household_id))
+with check (public.is_household_member(household_id));
+
+drop policy if exists monthly_household_incomes_all on public.monthly_household_incomes;
+create policy monthly_household_incomes_all on public.monthly_household_incomes
 for all
 to authenticated
 using (public.is_household_member(household_id))

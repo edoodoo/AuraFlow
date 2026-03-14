@@ -38,6 +38,12 @@ export const monthlyPlanRequestSchema = z.object({
   partner_email: z.string().trim().email().optional().or(z.literal("")),
 });
 
+export const monthlyIncomeSchema = z.object({
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2000).max(3000),
+  income_amount: z.number().positive(),
+});
+
 export const monthlyPlanItemSchema = z.object({
   monthly_plan_id: z.string().uuid(),
   category_id: z.string().uuid(),

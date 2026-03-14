@@ -19,6 +19,16 @@ export type MonthlyPlan = {
   created_by: string;
 };
 
+export type MonthlyHouseholdIncome = {
+  id: string;
+  household_id: string;
+  month: number;
+  year: number;
+  income_amount: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type MonthlyPlanItem = {
   id: string;
   monthly_plan_id: string;
@@ -122,6 +132,46 @@ export async function getMonthlyPlan(context: HouseholdContext, month: number, y
     .eq("month", month)
     .eq("year", year)
     .maybeSingle<MonthlyPlan>();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getMonthlyHouseholdIncome(context: HouseholdContext, month: number, year: number) {
+  if (!context.household) return null;
+
+  const admin = getSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("monthly_household_incomes")
+    .select("id,household_id,month,year,income_amount,created_at,updated_at")
+    .eq("household_id", context.household.id)
+    .eq("month", month)
+    .eq("year", year)
+    .maybeSingle<MonthlyHouseholdIncome>();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertMonthlyHouseholdIncome(context: HouseholdContext, month: number, year: number, incomeAmount: number) {
+  if (!context.household) {
+    throw new Error("Crie ou vincule o mensal antes de informar a renda do casal.");
+  }
+
+  const admin = getSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("monthly_household_incomes")
+    .upsert(
+      {
+        household_id: context.household.id,
+        month,
+        year,
+        income_amount: incomeAmount,
+      },
+      { onConflict: "household_id,month,year" },
+    )
+    .select("id,household_id,month,year,income_amount,created_at,updated_at")
+    .single<MonthlyHouseholdIncome>();
 
   if (error) throw error;
   return data;
@@ -245,6 +295,7 @@ export function buildMonthlySummary(
   items: MonthlyPlanItem[],
   transactions: HouseholdTransaction[],
   memberLabels: Record<string, string>,
+  monthlyIncome: number | null = null,
 ) {
   const linkedTransactions = transactions.filter((transaction) => transaction.transaction_kind === "linked_plan_item");
   const avulsoTransactions = transactions.filter((transaction) => transaction.transaction_kind === "avulso");
@@ -314,10 +365,13 @@ export function buildMonthlySummary(
     }));
 
   return {
+    monthly_income: monthlyIncome,
     total_planned: totalPlanned,
     total_realized: totalRealized,
     fixed_count: fixedCount,
     usage_pct: totalPlanned > 0 ? Math.min(100, (totalRealized / totalPlanned) * 100) : 0,
+    planned_balance: monthlyIncome === null ? null : monthlyIncome - totalPlanned,
+    available_balance: monthlyIncome === null ? null : monthlyIncome - totalRealized - avulsoTotal,
     top_categories: [...topCategoryMap.entries()]
       .map(([category_id, value]) => ({
         category_id,

@@ -47,10 +47,13 @@ type PlanItem = {
 };
 
 type Summary = {
+  monthly_income: number | null;
   total_planned: number;
   total_realized: number;
   fixed_count: number;
   usage_pct: number;
+  planned_balance: number | null;
+  available_balance: number | null;
   sections: Array<{ key: SectionKey; label: string; planned: number; realized: number; item_count: number }>;
   avulso_total: number;
   avulso_count: number;
@@ -98,6 +101,9 @@ const sections: Array<{ key: SectionKey; label: string; helper: string }> = [
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
+
+const formatCurrencyOrFallback = (value: number | null | undefined, fallback: string) =>
+  value === null || value === undefined ? fallback : formatCurrency(value);
 
 const fieldErrorClass = "border-rose-400/70 ring-1 ring-rose-400/40 focus:border-rose-300 focus:ring-rose-300/40";
 
@@ -185,6 +191,9 @@ export default function MonthlyPlanPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [incomeValue, setIncomeValue] = useState("");
+  const [incomeError, setIncomeError] = useState<string | null>(null);
+  const [incomeSaving, setIncomeSaving] = useState(false);
   const [newItemErrors, setNewItemErrors] = useState<Record<SectionKey, ItemFieldErrors>>({
     general: createBlankFieldErrors(),
     investments: createBlankFieldErrors(),
@@ -219,6 +228,8 @@ export default function MonthlyPlanPage() {
       setPlan(data.plan);
       setItems(data.items ?? []);
       setSummary(data.summary ?? null);
+      setIncomeValue(data.summary?.monthly_income ? String(data.summary.monthly_income) : "");
+      setIncomeError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao carregar o planejamento.");
     } finally {
@@ -278,10 +289,46 @@ export default function MonthlyPlanPage() {
       setPlan(payload.plan);
       setItems(payload.items ?? []);
       setSummary(payload.summary ?? null);
+      setIncomeValue(payload.summary?.monthly_income ? String(payload.summary.monthly_income) : "");
+      setIncomeError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível preparar o mensal.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveIncome = async () => {
+    if (!household) {
+      setIncomeError("Crie ou vincule o mensal antes de informar a renda do casal.");
+      return;
+    }
+
+    const parsedIncome = Number(incomeValue);
+    if (!incomeValue.trim() || !Number.isFinite(parsedIncome) || parsedIncome <= 0) {
+      setIncomeError("Informe a renda total do casal com um valor maior que zero.");
+      return;
+    }
+
+    setIncomeSaving(true);
+    setIncomeError(null);
+    try {
+      const res = await fetch("/api/monthly-plan/income", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          month,
+          year,
+          income_amount: parsedIncome,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Não foi possível salvar a renda mensal.");
+      await loadData();
+    } catch (err) {
+      setIncomeError(err instanceof Error ? err.message : "Não foi possível salvar a renda mensal.");
+    } finally {
+      setIncomeSaving(false);
     }
   };
 
@@ -532,38 +579,76 @@ export default function MonthlyPlanPage() {
               </span>
             </div>
             <p className="mt-2 text-sm text-slate-400">
-              O mensal é a tela operacional do casal. Use o dashboard apenas para leitura rápida do período.
+              Informe a soma de salarios e extras do casal para melhorar a leitura do mensal e do dashboard.
             </p>
-            <button
-              type="button"
-              onClick={exportNextMonth}
-              disabled={!plan || saving}
-              className="secondary-button mt-4 w-full border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-50"
-            >
-              <RefreshCw size={15} />
-              Exportar fixos para o próximo mês
-            </button>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Renda total do casal no mês"
+                value={incomeValue}
+                onChange={(e) => {
+                  setIncomeValue(e.target.value);
+                  setIncomeError(null);
+                }}
+                disabled={!household || incomeSaving}
+                className={incomeError ? fieldErrorClass : undefined}
+              />
+              <button type="button" className="primary-button min-w-[180px]" onClick={() => void saveIncome()} disabled={!household || incomeSaving}>
+                {summary?.monthly_income ? "Atualizar renda" : "Salvar renda"}
+              </button>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-slate-400">
+                {!household
+                  ? "Crie ou vincule o mensal primeiro para registrar a renda do casal."
+                  : "Use o valor total do casal para este periodo. Ele pode ser atualizado se entrarem novos extras."}
+              </p>
+              <button
+                type="button"
+                onClick={exportNextMonth}
+                disabled={!plan || saving}
+                className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-50"
+              >
+                <RefreshCw size={15} />
+                Exportar fixos
+              </button>
+            </div>
+            {incomeError && <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{incomeError}</p>}
           </div>
         </div>
 
         {summary && (
-          <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-4">
-            <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-4">
-              <div className="soft-label text-slate-400">Planejado</div>
-              <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary.total_planned)}</div>
+          <div className="mt-5 space-y-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+              <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-4">
+                <div className="soft-label text-slate-400">Planejado</div>
+                <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary.total_planned)}</div>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-4">
+                <div className="soft-label text-slate-400">Realizado</div>
+                <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary.total_realized)}</div>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-4">
+                <div className="soft-label text-slate-400">Avulsos</div>
+                <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary.avulso_total)}</div>
+                <p className="mt-2 text-xs text-slate-500">{summary.avulso_count} lancamentos fora do mensal</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-4">
+                <div className="soft-label text-slate-400">Saldo disponível</div>
+                <div className="mt-2 text-2xl font-semibold text-white">
+                  {formatCurrencyOrFallback(summary.available_balance, "Informe a renda")}
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Saldo previsto: {formatCurrencyOrFallback(summary.planned_balance, "informe a renda")}
+                </p>
+              </div>
             </div>
-            <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-4">
-              <div className="soft-label text-slate-400">Realizado</div>
-              <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary.total_realized)}</div>
-            </div>
-            <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-4">
-              <div className="soft-label text-slate-400">Fixos</div>
-              <div className="mt-2 text-2xl font-semibold text-white">{summary.fixed_count}</div>
-            </div>
-            <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-4">
-              <div className="soft-label text-slate-400">Uso do orçamento</div>
-              <div className="mt-2 text-2xl font-semibold text-white">{summary.usage_pct.toFixed(0)}%</div>
-            </div>
+            {summary.monthly_income === null && (
+              <p className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+                Informe a renda total do casal neste mes para liberar o saldo disponivel e melhorar a leitura do topo.
+              </p>
+            )}
           </div>
         )}
       </section>

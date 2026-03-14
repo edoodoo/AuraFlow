@@ -1,0 +1,169 @@
+# Contexto Operacional - AuraFlow
+
+## 1) Objetivo atual
+- Manter continuidade do projeto sem perder decisões quando o chat ficar longo.
+- Usar este arquivo como fonte única de retomada entre conversas.
+- Validar funcionalmente o app end-to-end após as últimas mudanças de fluxo.
+
+## 2) Estado atual do produto
+- App focado em planejamento mensal compartilhado do casal.
+- Tela dedicada de categorias implementada.
+- Categorias divididas em `Custo fixo` e `Variável`.
+- Lançamentos com opção:
+  - avulso
+  - vinculado ao item do mensal
+- Comparação e dashboard adaptados para o cenário do casal.
+- Fluxo de vínculo de cônjuge com validação de e-mail existente na base.
+
+## 3) O que já foi implementado
+- Tela `Mensal` com:
+  - vínculo opcional do cônjuge por e-mail
+  - seções:
+    - Gastos mensais
+    - Investimentos
+    - Reserva de Emergência
+    - Dívidas
+  - exportação de itens fixos para o próximo mês
+- Tela `Categorias` exclusiva:
+  - agrupamento por `Custo fixo` e `Variável`
+  - categorias padrão pré-carregadas
+  - criação de categorias personalizadas
+  - exclusão para categorias personalizadas
+- Dashboard simplificado para leitura rápida do período.
+- Comparação com visão de previsto vs realizado e divisão por pagador.
+- Ajustes de robustez:
+  - erro de parse no vínculo do cônjuge corrigido
+  - tratamento de erro com mensagem clara de e-mail inexistente
+  - hardening no client server-side do Supabase para evitar crash de cookie em render.
+
+## 4) Decisões importantes
+- Dashboard é tela de acompanhamento (não de operação/cadastro).
+- Operação principal fica na tela `Mensal`.
+- `Categorias` virou tela separada.
+- Categorias padrão não devem ser removidas na interface.
+- Categorias personalizadas devem mostrar lixeira para exclusão.
+- Vínculo de cônjuge, por enquanto:
+  - apenas valida se o e-mail existe na base
+  - aceite/rejeite do vínculo fica para versão futura.
+- Este arquivo (`context.md`) é a fonte oficial de retomada entre chats.
+
+## 5) Pendências abertas
+- [ ] Executar checklist funcional completo em produção.
+- [ ] Revisar UX final de mensagens de sucesso/erro em fluxo mensal.
+- [ ] Refinar pontos de responsividade conforme testes reais.
+- [ ] Definir backlog da próxima fase (aceite de vínculo do cônjuge).
+
+## 6) Próximo passo único
+- Executar o test plan completo abaixo e registrar cada resultado com `ok` ou `bug`.
+
+## 7) Bugs/riscos conhecidos
+- Após deploy, podem ocorrer oscilações transitórias em rotas (retestar após alguns minutos).
+- Mudanças de schema exigem SQL atualizado no Supabase antes da validação funcional.
+- Vínculo de cônjuge depende de e-mail existente na base.
+
+## 8) Como retomar em novo chat
+- Solicitar leitura deste `context.md` antes de qualquer ação.
+- Confirmar entendimento em 5 bullets.
+- Continuar a partir do “Próximo passo único”.
+- Não recomeçar análise do zero se este contexto já estiver atualizado.
+
+## 9) Test plan pendente (execução na próxima conversa)
+
+### 9.1 Login e navegação
+- [ ] Entrar com usuário principal.
+- [ ] Confirmar menu com:
+  - Dashboard
+  - Mensal
+  - Categorias
+  - Lançamentos
+  - Comparação
+
+### 9.2 Categorias
+- [ ] Abrir `Categorias`.
+- [ ] Confirmar grupos:
+  - Custo fixo
+  - Variável
+- [ ] Confirmar categorias padrão carregadas.
+- [ ] Criar 2 categorias novas (1 fixa, 1 variável).
+- [ ] Validar ícone de lixeira nas categorias personalizadas.
+- [ ] Excluir 1 categoria de teste.
+- [ ] Confirmar que categoria padrão não tem exclusão.
+
+### 9.3 Mensal
+- [ ] Abrir `Mensal`.
+- [ ] Escolher mês/ano.
+- [ ] Testar vínculo com e-mail inexistente:
+  - Deve mostrar mensagem clara de e-mail não cadastrado.
+- [ ] Testar vínculo com e-mail existente:
+  - Deve salvar com sucesso.
+- [ ] Confirmar membros esperados na área de vínculo.
+- [ ] Criar itens em:
+  - Gastos mensais
+  - Investimentos
+  - Reserva de Emergência
+  - Dívidas
+- [ ] Marcar ao menos 1 item como fixo.
+- [ ] Testar `Exportar fixos para o próximo mês`.
+
+### 9.4 Dashboard
+- [ ] Abrir `Dashboard`.
+- [ ] Confirmar presença:
+  - Orçado no mês
+  - Orçamentos fixos
+  - Ritmo do mês
+  - Top categorias do mês
+- [ ] Confirmar ausência:
+  - Categorias ativas
+  - Expanda seu mapa financeiro
+  - Categorias e metas
+
+### 9.5 Lançamentos
+- [ ] Criar 1 lançamento avulso.
+- [ ] Criar 1 lançamento vinculado ao mensal.
+- [ ] No vinculado:
+  - selecionar item do mensal
+  - validar categoria/descrição
+  - anexar recibo (câmera/galeria)
+
+### 9.6 Reflexo no Mensal
+- [ ] Confirmar atualização de item vinculado:
+  - status
+  - quem pagou
+  - data
+- [ ] Se houver pagamentos parciais, validar transição:
+  - pending -> partial -> paid
+
+### 9.7 Comparação
+- [ ] Validar:
+  - previsto vs realizado
+  - quem lançou/pagou
+  - categorias acima do previsto
+  - pendências
+  - divisão por cônjuge
+
+### 9.8 Segundo cônjuge
+- [ ] Entrar com usuário vinculado.
+- [ ] Confirmar mesma visão de Mensal e Dashboard.
+- [ ] Realizar 1 lançamento vinculado.
+- [ ] Verificar reflexo na Comparação.
+
+### 9.9 PWA / Mobile
+- [ ] Validar no iPhone:
+  - adicionar à tela inicial
+  - abrir app instalado
+  - fluxo de câmera/galeria no recibo
+  - navegação inferior e área segura (safe area)
+
+## 10) Registro de execução do test plan (preencher na próxima conversa)
+- Passo 1: ...
+- Passo 2: ...
+- Passo 3: ...
+- ...
+- Resultado final:
+  - [ ] aprovado sem bloqueios
+  - [ ] aprovado com ajustes
+  - [ ] bloqueado (listar bugs críticos)
+
+## 11) Última atualização
+- Data: 2026-03-11
+- Status: contexto completo + test plan pronto para execução

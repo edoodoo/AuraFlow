@@ -196,6 +196,24 @@
   - [x] correção implementada
   - [ ] revalidação manual pendente
 
+### 10.5 Retorno manual registrado em 2026-03-14
+- `9.7 Comparação` revelou um bug/regra de negocio inconsistente no fluxo de lancamentos vinculados.
+- Sintoma encontrado: o sistema marcava a conta como `paga`, mas ainda permitia novo pagamento vinculado para o mesmo item mensal.
+- Efeito observado: a `Comparação` passava a mostrar a categoria como excedida por causa do pagamento extra sobre uma conta ja quitada.
+- Decisao adotada:
+  - bloquear no backend qualquer novo pagamento vinculado que exceda o saldo restante
+  - manter itens `PAGO` visiveis no dropdown de vinculo, porem desabilitados
+  - orientar claramente o usuario a usar `Gasto avulso` quando quiser registrar um valor extra
+- Correção aplicada:
+  - bloqueio no `POST /api/transactions`
+  - bloqueio no `PUT /api/transactions/[id]`
+  - dropdown da tela `Lançamentos` com opcao `PAGO` desabilitada
+  - mensagem visual explicando o que fazer quando a conta ja estiver quitada
+- Status desse ponto:
+  - [x] bug identificado
+  - [x] correção implementada
+  - [ ] revalidação manual pendente
+
 - Resultado final:
   - [ ] aprovado sem bloqueios
   - [ ] aprovado com ajustes
@@ -203,10 +221,11 @@
 
 ## 11) Próximos passos após testes manuais
 1. Revalidar `9.3 Mensal` após a correção de validação inline e feedback local.
-2. Continuar o test plan a partir de `9.4 Dashboard`.
-3. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
-4. Refinar responsividade conforme feedback do teste no iPhone.
+2. Revalidar `9.7 Comparação` e o fluxo de `Lançamentos` apos o bloqueio de pagamento excedente.
+3. Continuar o test plan a partir de `9.4 Dashboard`.
+4. Iniciar backlog da fase 2: aceite/rejeição formal do vínculo de cônjuge.
+5. Refinar responsividade conforme feedback do teste no iPhone.
 
 ## 12) Última atualização
 - Data: 2026-03-14
-- Status: inspeção de código concluída, bug real confirmado em `9.3 Mensal`, correção aplicada, revalidação manual pendente
+- Status: inspeção de código concluída, bugs reais confirmados em `9.3 Mensal` e `9.7 Comparação`, correções aplicadas, revalidação manual pendente

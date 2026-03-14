@@ -44,6 +44,8 @@ export default function TransactionsPage() {
   const [receipt, setReceipt] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const selectedPlanItem = planItems.find((item) => item.id === form.monthly_plan_item_id) ?? null;
+  const hasPaidPlanItems = planItems.some((item) => item.status === "paid");
 
   const loadData = async () => {
     setLoading(true);
@@ -74,8 +76,24 @@ export default function TransactionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (form.transaction_kind !== "linked_plan_item" || !selectedPlanItem || selectedPlanItem.status !== "paid") return;
+
+    setForm((prev) => ({
+      ...prev,
+      monthly_plan_item_id: "",
+    }));
+    setError("Este item do mensal já está pago. Para registrar valor extra, use Gasto avulso.");
+  }, [form.transaction_kind, selectedPlanItem]);
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (form.transaction_kind === "linked_plan_item" && selectedPlanItem?.status === "paid") {
+      setError("Este item do mensal já está pago. Para registrar valor extra, use Gasto avulso.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("transaction_kind", form.transaction_kind);
     formData.append("monthly_plan_item_id", form.monthly_plan_item_id);
@@ -151,11 +169,20 @@ export default function TransactionsPage() {
                 >
                   <option value="">Selecione um item do mensal</option>
                   {planItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.title} · {formatCurrency(item.expected_amount)} · {item.status === "paid" ? "pago" : item.status === "partial" ? "parcial" : "pendente"}
+                    <option key={item.id} value={item.id} disabled={item.status === "paid"}>
+                      {item.title} · {formatCurrency(item.expected_amount)} · {item.status === "paid" ? "PAGO" : item.status === "partial" ? "parcial" : "pendente"}
                     </option>
                   ))}
                 </select>
+                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+                  <span className="font-semibold text-emerald-200">PAGO</span> aparece desabilitado quando a conta ja foi quitada.
+                  Para registrar valor extra, use <span className="font-semibold text-emerald-50">Gasto avulso</span>.
+                </div>
+                {hasPaidPlanItems && (
+                  <p className="text-xs text-slate-400">
+                    Itens quitados continuam visiveis apenas como referencia e nao aceitam novo vinculo.
+                  </p>
+                )}
               </div>
             )}
 

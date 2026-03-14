@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { requireUserForRoute } from "@/lib/auth";
 import { ENV } from "@/lib/env";
 import { getHouseholdContext } from "@/lib/household";
-import { refreshMonthlyPlanItemStatus } from "@/lib/monthly-plan";
+import { getLinkedPaymentState, refreshMonthlyPlanItemStatus } from "@/lib/monthly-plan";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
 export async function GET(req: Request) {
   const { user, response } = await requireUserForRoute();
@@ -84,6 +87,25 @@ export async function POST(req: Request) {
     if (planError) return NextResponse.json({ error: planError.message }, { status: 400 });
     if (!plan || plan.household_id !== context.household.id) {
       return NextResponse.json({ error: "O item escolhido não pertence ao seu planejamento." }, { status: 403 });
+    }
+
+    const paymentState = await getLinkedPaymentState(item.id);
+    if (paymentState.remaining_amount <= 0) {
+      return NextResponse.json(
+        {
+          error: "Este item do mensal já está pago. Para registrar valor extra, use um lançamento avulso.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (amountRaw > paymentState.remaining_amount) {
+      return NextResponse.json(
+        {
+          error: `Faltam apenas ${formatCurrency(paymentState.remaining_amount)} para quitar este item. Ajuste o valor ou registre o excedente como lançamento avulso.`,
+        },
+        { status: 400 },
+      );
     }
 
     linkedItem = item;

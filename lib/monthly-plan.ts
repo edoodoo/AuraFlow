@@ -52,6 +52,14 @@ export type HouseholdTransaction = {
   category: { name: string } | { name: string }[] | null;
 };
 
+export type LinkedPaymentState = {
+  item_id: string;
+  title: string;
+  expected_amount: number;
+  total_paid: number;
+  remaining_amount: number;
+};
+
 export function getMonthDateRange(month: number, year: number) {
   const start = new Date(Date.UTC(year, month - 1, 1));
   const end = new Date(Date.UTC(year, month, 0));
@@ -192,6 +200,36 @@ export async function refreshMonthlyPlanItemStatus(itemId: string) {
     .eq("id", itemId);
 
   if (updateError) throw updateError;
+}
+
+export async function getLinkedPaymentState(itemId: string, options?: { excludeTransactionId?: string }) {
+  const admin = getSupabaseAdminClient();
+  const { data: item, error: itemError } = await admin
+    .from("monthly_plan_items")
+    .select("id,title,expected_amount")
+    .eq("id", itemId)
+    .single<{ id: string; title: string; expected_amount: number }>();
+
+  if (itemError) throw itemError;
+
+  let transactionsQuery = admin.from("transactions").select("id,amount").eq("monthly_plan_item_id", itemId);
+  if (options?.excludeTransactionId) {
+    transactionsQuery = transactionsQuery.neq("id", options.excludeTransactionId);
+  }
+
+  const { data: transactions, error: txError } = await transactionsQuery.returns<Array<{ id: string; amount: number }>>();
+  if (txError) throw txError;
+
+  const totalPaid = (transactions ?? []).reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+  const expectedAmount = Number(item.expected_amount || 0);
+
+  return {
+    item_id: item.id,
+    title: item.title,
+    expected_amount: expectedAmount,
+    total_paid: totalPaid,
+    remaining_amount: Math.max(expectedAmount - totalPaid, 0),
+  } satisfies LinkedPaymentState;
 }
 
 export function buildMonthlySummary(

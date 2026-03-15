@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   let query = supabase
     .from("transactions")
     .select(
-      "id,amount,description,transaction_date,receipt_url,transaction_kind,monthly_plan_item_id,category:categories(name),plan_item:monthly_plan_items(title,section)",
+      "id,category_id,amount,description,transaction_date,receipt_url,transaction_kind,monthly_plan_item_id,category:categories(name),plan_item:monthly_plan_items(title,section)",
     )
     .eq("user_id", user.id)
     .order("transaction_date", { ascending: false })

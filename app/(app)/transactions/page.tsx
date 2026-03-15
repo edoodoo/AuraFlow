@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Link2, PlusCircle, ReceiptText, Wallet } from "lucide-react";
+import { Camera, EllipsisVertical, Link2, Pencil, PlusCircle, ReceiptText, Save, Trash2, Wallet, X } from "lucide-react";
 
 type Category = { id: string; name: string };
 type PlanItem = {
@@ -16,6 +16,7 @@ type PlanItem = {
 };
 type Transaction = {
   id: string;
+  category_id: string | null;
   amount: number;
   description: string | null;
   transaction_date: string;
@@ -28,6 +29,18 @@ type Transaction = {
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
+
+type TransactionDraft = {
+  category_id: string;
+  amount: string;
+  transaction_date: string;
+  description: string;
+};
+
+type Notice = {
+  type: "success" | "error";
+  message: string;
+};
 
 export default function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -44,6 +57,14 @@ export default function TransactionsPage() {
   const [receipt, setReceipt] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState<TransactionDraft | null>(null);
+  const [editingError, setEditingError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [savingEditId, setSavingEditId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [historyNotice, setHistoryNotice] = useState<Notice | null>(null);
   const selectedPlanItem = planItems.find((item) => item.id === form.monthly_plan_item_id) ?? null;
   const hasPaidPlanItems = planItems.some((item) => item.status === "paid");
 
@@ -86,6 +107,86 @@ export default function TransactionsPage() {
     setError("Este item do mensal já está pago. Para registrar valor extra, use Gasto avulso.");
   }, [form.transaction_kind, selectedPlanItem]);
 
+  const startEditing = (transaction: Transaction) => {
+    setActiveMenuId(null);
+    setPendingDeleteId(null);
+    setHistoryNotice(null);
+    setEditingError(null);
+    setEditingId(transaction.id);
+    setEditingDraft({
+      category_id: transaction.category_id ?? "",
+      amount: transaction.amount ? String(transaction.amount) : "",
+      transaction_date: transaction.transaction_date,
+      description: transaction.description ?? "",
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingDraft(null);
+    setEditingError(null);
+  };
+
+  const saveEdit = async (transaction: Transaction) => {
+    if (!editingDraft || editingId !== transaction.id) return;
+
+    const parsedAmount = Number(editingDraft.amount);
+    if (!editingDraft.category_id || !editingDraft.transaction_date || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setEditingError("Preencha categoria, valor e data com informações válidas antes de salvar.");
+      return;
+    }
+
+    setSavingEditId(transaction.id);
+    setEditingError(null);
+    setHistoryNotice(null);
+    try {
+      const res = await fetch(`/api/transactions/${transaction.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category_id: editingDraft.category_id,
+          amount: parsedAmount,
+          transaction_date: editingDraft.transaction_date,
+          description: editingDraft.description.trim() || null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Não foi possível atualizar o lançamento.");
+      await loadData();
+      cancelEditing();
+      setHistoryNotice({ type: "success", message: "Lançamento atualizado com sucesso." });
+    } catch (err) {
+      setEditingError(err instanceof Error ? err.message : "Não foi possível atualizar o lançamento.");
+    } finally {
+      setSavingEditId(null);
+    }
+  };
+
+  const removeTransaction = async (transactionId: string) => {
+    setRemovingId(transactionId);
+    setHistoryNotice(null);
+    setEditingError(null);
+    try {
+      const res = await fetch(`/api/transactions/${transactionId}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Não foi possível excluir o lançamento.");
+      await loadData();
+      if (editingId === transactionId) {
+        cancelEditing();
+      }
+      setPendingDeleteId(null);
+      setActiveMenuId(null);
+      setHistoryNotice({ type: "success", message: "Lançamento excluído com sucesso." });
+    } catch (err) {
+      setHistoryNotice({
+        type: "error",
+        message: err instanceof Error ? err.message : "Não foi possível excluir o lançamento.",
+      });
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -109,6 +210,8 @@ export default function TransactionsPage() {
       setError(payload.error ?? "Falha ao registrar gasto.");
       return;
     }
+    setError(null);
+    setHistoryNotice(null);
     setForm((prev) => ({ ...prev, amount: "", description: "", monthly_plan_item_id: "" }));
     setReceipt(null);
     void loadData();
@@ -270,6 +373,18 @@ export default function TransactionsPage() {
             </span>
           </div>
           {loading && <p className="text-sm text-slate-400">Carregando...</p>}
+          {historyNotice && (
+            <p
+              className={[
+                "mb-4 rounded-2xl border px-4 py-3 text-sm",
+                historyNotice.type === "success"
+                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-100"
+                  : "border-rose-400/20 bg-rose-500/10 text-rose-200",
+              ].join(" ")}
+            >
+              {historyNotice.message}
+            </p>
+          )}
           <AnimatePresence>
             <div className="space-y-3">
               {transactions.map((t) => (
@@ -277,7 +392,7 @@ export default function TransactionsPage() {
                   key={t.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4 text-sm"
+                  className="relative rounded-[1.6rem] border border-white/10 bg-white/5 p-4 text-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
@@ -300,24 +415,211 @@ export default function TransactionsPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-base font-semibold text-white">{formatCurrency(Number(t.amount))}</span>
+                    <div className="flex items-start gap-2">
+                      <span className="text-base font-semibold text-white">{formatCurrency(Number(t.amount))}</span>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          aria-label="Abrir ações do lançamento"
+                          onClick={() => {
+                            setActiveMenuId((prev) => (prev === t.id ? null : t.id));
+                            setPendingDeleteId(null);
+                          }}
+                          className="rounded-full border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-white/10 hover:text-white"
+                        >
+                          <EllipsisVertical size={16} />
+                        </button>
+                        {activeMenuId === t.id && (
+                          <div className="absolute right-0 top-11 z-10 w-44 rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl">
+                            <button
+                              type="button"
+                              onClick={() => startEditing(t)}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10"
+                            >
+                              <Pencil size={14} />
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPendingDeleteId(t.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-200 transition hover:bg-rose-500/10"
+                            >
+                              <Trash2 size={14} />
+                              Excluir
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400">
-                    <span>{t.transaction_date}</span>
-                    {t.receipt_url ? (
-                      <a
-                        className="inline-flex items-center gap-1 font-medium text-cyan-300 hover:text-cyan-200"
-                        href={t.receipt_url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <ReceiptText size={14} />
-                        Ver recibo
-                      </a>
-                    ) : (
-                      <span>Sem recibo</span>
-                    )}
-                  </div>
+
+                  {editingId === t.id && editingDraft ? (
+                    <div className="mt-4 rounded-[1.4rem] border border-white/10 bg-slate-950/40 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-white">Editar lançamento</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-400">
+                            Você pode ajustar categoria, valor, data e descrição sem sair desta tela.
+                          </p>
+                        </div>
+                        <button type="button" onClick={cancelEditing} className="rounded-full border border-white/10 p-2 text-slate-300 hover:bg-white/10 hover:text-white">
+                          <X size={14} />
+                        </button>
+                      </div>
+
+                      {t.transaction_kind === "linked_plan_item" && (
+                        <p className="mt-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-xs text-cyan-100">
+                          Este lançamento continua ligado ao mensal. O vínculo e o recibo permanecem como estão nesta edição.
+                        </p>
+                      )}
+
+                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-slate-200">Categoria</label>
+                          <select
+                            value={editingDraft.category_id}
+                            onChange={(e) => {
+                              setEditingDraft((prev) => (prev ? { ...prev, category_id: e.target.value } : prev));
+                              setEditingError(null);
+                            }}
+                            disabled={savingEditId === t.id}
+                          >
+                            <option value="">Selecione uma categoria</option>
+                            {categories.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-slate-200">Valor</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editingDraft.amount}
+                            onChange={(e) => {
+                              setEditingDraft((prev) => (prev ? { ...prev, amount: e.target.value } : prev));
+                              setEditingError(null);
+                            }}
+                            disabled={savingEditId === t.id}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-slate-200">Data</label>
+                          <input
+                            type="date"
+                            value={editingDraft.transaction_date}
+                            onChange={(e) => {
+                              setEditingDraft((prev) => (prev ? { ...prev, transaction_date: e.target.value } : prev));
+                              setEditingError(null);
+                            }}
+                            disabled={savingEditId === t.id}
+                          />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <label className="text-sm font-medium text-slate-200">Descrição</label>
+                          <input
+                            type="text"
+                            value={editingDraft.description}
+                            onChange={(e) => {
+                              setEditingDraft((prev) => (prev ? { ...prev, description: e.target.value } : prev));
+                              setEditingError(null);
+                            }}
+                            disabled={savingEditId === t.id}
+                            placeholder="Descreva o lançamento"
+                          />
+                        </div>
+                      </div>
+
+                      {editingError && (
+                        <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{editingError}</p>
+                      )}
+
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+                          <span className="rounded-full bg-white/5 px-3 py-2">Tipo: {t.transaction_kind === "linked_plan_item" ? "Ligado ao mensal" : "Avulso"}</span>
+                          {t.receipt_url && (
+                            <a className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-2 text-cyan-300 hover:text-cyan-200" href={t.receipt_url} target="_blank" rel="noreferrer">
+                              <ReceiptText size={14} />
+                              Ver recibo atual
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={cancelEditing}
+                            disabled={savingEditId === t.id}
+                            className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10"
+                          >
+                            <X size={14} />
+                            Cancelar
+                          </button>
+                          <button type="button" onClick={() => void saveEdit(t)} disabled={savingEditId === t.id} className="primary-button">
+                            <Save size={14} />
+                            {savingEditId === t.id ? "Salvando..." : "Salvar"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400">
+                      <span>{t.transaction_date}</span>
+                      {t.receipt_url ? (
+                        <a
+                          className="inline-flex items-center gap-1 font-medium text-cyan-300 hover:text-cyan-200"
+                          href={t.receipt_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <ReceiptText size={14} />
+                          Ver recibo
+                        </a>
+                      ) : (
+                        <span>Sem recibo</span>
+                      )}
+                    </div>
+                  )}
+
+                  {pendingDeleteId === t.id && (
+                    <div className="mt-4 rounded-[1.4rem] border border-rose-400/20 bg-rose-500/10 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="text-sm text-rose-100">
+                          <p className="font-medium text-rose-50">Excluir este lançamento?</p>
+                          <p className="mt-1 text-rose-200/90">A exclusão atualiza o histórico e pode alterar o status do item vinculado no mensal.</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPendingDeleteId(null)}
+                            disabled={removingId === t.id}
+                            className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void removeTransaction(t.id)}
+                            disabled={removingId === t.id}
+                            className="secondary-button border-rose-400/20 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20"
+                          >
+                            {removingId === t.id ? (
+                              "Excluindo..."
+                            ) : (
+                              <>
+                                <Trash2 size={14} />
+                                Excluir agora
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>

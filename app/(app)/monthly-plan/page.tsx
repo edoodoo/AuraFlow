@@ -203,6 +203,8 @@ export default function MonthlyPlanPage() {
   const [sectionErrors, setSectionErrors] = useState<Partial<Record<SectionKey, string>>>({});
   const [itemErrors, setItemErrors] = useState<Record<string, ItemFieldErrors>>({});
   const [itemErrorMessages, setItemErrorMessages] = useState<Record<string, string>>({});
+  const [itemSuccessMessages, setItemSuccessMessages] = useState<Record<string, string>>({});
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
 
   const groupedItems = useMemo(
     () =>
@@ -240,6 +242,10 @@ export default function MonthlyPlanPage() {
   useEffect(() => {
     void loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month, year]);
+
+  useEffect(() => {
+    setExportNotice(null);
   }, [month, year]);
 
   useEffect(() => {
@@ -393,6 +399,7 @@ export default function MonthlyPlanPage() {
     const validationErrors = validateItemDraft(draft);
     if (Object.keys(validationErrors).length > 0) {
       setItemErrors((prev) => ({ ...prev, [itemId]: validationErrors }));
+      setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "" }));
       setItemErrorMessages((prev) => ({
         ...prev,
         [itemId]: "Preencha os campos destacados antes de salvar o item.",
@@ -404,6 +411,7 @@ export default function MonthlyPlanPage() {
     setSaving(true);
     setError(null);
     setItemErrorMessages((prev) => ({ ...prev, [itemId]: "" }));
+    setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "" }));
     try {
       const res = await fetch(`/api/monthly-plan/items/${itemId}`, {
         method: "PUT",
@@ -422,7 +430,9 @@ export default function MonthlyPlanPage() {
       if (!res.ok) throw new Error(data.error ?? "Não foi possível atualizar o item.");
       setItemErrors((prev) => ({ ...prev, [itemId]: createBlankFieldErrors() }));
       await loadData();
+      setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "Item salvo com sucesso." }));
     } catch (err) {
+      setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "" }));
       setItemErrorMessages((prev) => ({
         ...prev,
         [itemId]: err instanceof Error ? err.message : "Não foi possível atualizar o item.",
@@ -453,6 +463,7 @@ export default function MonthlyPlanPage() {
 
     setSaving(true);
     setError(null);
+    setExportNotice(null);
     try {
       const res = await fetch("/api/monthly-plan/export", {
         method: "POST",
@@ -467,7 +478,9 @@ export default function MonthlyPlanPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível exportar os itens fixos.");
       await loadData();
-      alert(`Exportação concluída. ${data.created ?? 0} itens fixos enviados para o próximo mês.`);
+      const created = Number(data.created ?? 0);
+      const itemLabel = created === 1 ? "item fixo foi enviado" : "itens fixos foram enviados";
+      setExportNotice(`Exportação concluída. ${created} ${itemLabel} para ${monthLabels[nextDate.getMonth()]} de ${nextDate.getFullYear()}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível exportar os itens fixos.");
     } finally {
@@ -492,6 +505,7 @@ export default function MonthlyPlanPage() {
         return { ...prev, [itemId]: current };
       });
       setItemErrorMessages((prev) => ({ ...prev, [itemId]: "" }));
+      setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "" }));
     }
   };
 
@@ -615,6 +629,7 @@ export default function MonthlyPlanPage() {
               </button>
             </div>
             {incomeError && <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{incomeError}</p>}
+            {exportNotice && <p className="mt-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">{exportNotice}</p>}
           </div>
         </div>
 
@@ -854,6 +869,11 @@ export default function MonthlyPlanPage() {
                       {itemErrorMessages[item.id] && (
                         <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
                           {itemErrorMessages[item.id]}
+                        </p>
+                      )}
+                      {itemSuccessMessages[item.id] && (
+                        <p className="mt-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+                          {itemSuccessMessages[item.id]}
                         </p>
                       )}
 

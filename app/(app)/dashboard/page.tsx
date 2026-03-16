@@ -48,9 +48,13 @@ export default function DashboardPage() {
   const monthlyIncome = summary?.monthly_income ?? null;
   const avulsoTotal = summary?.avulso_total ?? 0;
   const availableBalance = summary?.available_balance ?? null;
+  const hasNegativeAlert = useMemo(() => {
+    if (!summary) return false;
+    return (summary.available_balance ?? 0) < 0;
+  }, [summary]);
   const budgetHealthLabel = useMemo(() => {
     if (!summary) return "Sem planejamento";
-    if (summary.total_realized > summary.total_planned) return "Acima do previsto";
+    if ((summary.available_balance ?? 0) < 0) return "Ajuste urgente";
     if (summary.usage_pct > 80) return "Atenção ao ritmo";
     return "Mês sob controle";
   }, [summary]);
@@ -138,9 +142,16 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="soft-label text-slate-400">Saldo livre</div>
-                <div className="mt-3 text-3xl font-semibold text-white">{formatCurrencyOrFallback(availableBalance, "Informe")}</div>
+                <div className={["mt-3 text-3xl font-semibold", (availableBalance ?? 0) < 0 ? "text-rose-300" : "text-white"].join(" ")}>
+                  {formatCurrencyOrFallback(availableBalance, "Informe")}
+                </div>
               </div>
-              <span className="rounded-2xl bg-cyan-400/10 p-3 text-cyan-300">
+              <span
+                className={[
+                  "rounded-2xl p-3",
+                  (availableBalance ?? 0) < 0 ? "bg-rose-400/15 text-rose-300" : "bg-cyan-400/10 text-cyan-300",
+                ].join(" ")}
+              >
                 <Sparkles size={18} />
               </span>
             </div>
@@ -150,13 +161,20 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="soft-label text-slate-400">Ritmo do mês</div>
-                <div className="mt-3 text-3xl font-semibold text-white">{summary ? `${summary.usage_pct.toFixed(0)}%` : "0%"}</div>
+                <div className={["mt-3 text-3xl font-semibold", hasNegativeAlert ? "text-rose-300" : "text-white"].join(" ")}>
+                  {summary ? `${summary.usage_pct.toFixed(0)}%` : "0%"}
+                </div>
               </div>
-              <span className="rounded-2xl bg-emerald-400/10 p-3 text-emerald-300">
+              <span
+                className={[
+                  "rounded-2xl p-3",
+                  hasNegativeAlert ? "bg-rose-400/15 text-rose-300" : "bg-emerald-400/10 text-emerald-300",
+                ].join(" ")}
+              >
                 <TrendingUp size={18} />
               </span>
             </div>
-            <p className="mt-3 text-sm text-slate-400">{budgetHealthLabel}</p>
+            <p className={["mt-3 text-sm", hasNegativeAlert ? "text-rose-200" : "text-slate-400"].join(" ")}>{budgetHealthLabel}</p>
           </div>
           <div className="metric-card">
             <div className="flex items-start justify-between gap-3">
@@ -180,11 +198,18 @@ export default function DashboardPage() {
               <div>
                 <div className="soft-label text-slate-400">Ritmo do mês</div>
                 <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary?.total_realized ?? 0)}</div>
-                <p className="mt-1 text-sm text-slate-400">
-                  Realizado até agora de um total planejado de {formatCurrency(summary?.total_planned ?? 0)}.
+                <p className={["mt-1 text-sm", hasNegativeAlert ? "text-rose-100" : "text-slate-400"].join(" ")}>
+                  {hasNegativeAlert
+                    ? `Saldo livre negativo considerando mensal e avulsos. Revise o período no Mensal.`
+                    : `Realizado até agora de um total planejado de ${formatCurrency(summary?.total_planned ?? 0)}.`}
                 </p>
               </div>
-              <div className="rounded-2xl bg-cyan-400/10 px-4 py-3 text-sm text-cyan-200">
+              <div
+                className={[
+                  "rounded-2xl px-4 py-3 text-sm",
+                  hasNegativeAlert ? "bg-rose-400/15 text-rose-200" : "bg-cyan-400/10 text-cyan-200",
+                ].join(" ")}
+              >
                 {budgetHealthLabel}
               </div>
             </div>

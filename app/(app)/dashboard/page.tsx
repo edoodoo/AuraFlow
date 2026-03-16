@@ -47,41 +47,33 @@ export default function DashboardPage() {
   const pendingItems = summary?.pending_items ?? [];
   const monthlyIncome = summary?.monthly_income ?? null;
   const avulsoTotal = summary?.avulso_total ?? 0;
-  const plannedBalance = summary?.planned_balance ?? null;
   const availableBalance = summary?.available_balance ?? null;
-  const hasCriticalPlannedBalance = useMemo(() => {
-    if (!summary) return false;
-    return (summary.planned_balance ?? 0) < 0;
-  }, [summary]);
-  const committedBalance = useMemo(() => {
+  const monthBalance = useMemo(() => {
     if (!summary || monthlyIncome === null) return null;
     return monthlyIncome - summary.total_planned - avulsoTotal;
   }, [avulsoTotal, monthlyIncome, summary]);
-  const hasCriticalCommittedBalance = useMemo(() => {
-    if (committedBalance === null) return false;
-    return committedBalance < 0;
-  }, [committedBalance]);
+  const hasCriticalMonthBalance = useMemo(() => {
+    if (monthBalance === null) return false;
+    return monthBalance < 0;
+  }, [monthBalance]);
   const hasCriticalAvailableBalance = useMemo(() => {
     if (!summary) return false;
     return (summary.available_balance ?? 0) < 0;
   }, [summary]);
   const hasNegativeAlert = useMemo(() => {
     if (!summary) return false;
-    return hasCriticalPlannedBalance || hasCriticalCommittedBalance || hasCriticalAvailableBalance;
-  }, [hasCriticalAvailableBalance, hasCriticalCommittedBalance, hasCriticalPlannedBalance, summary]);
+    return hasCriticalMonthBalance || hasCriticalAvailableBalance;
+  }, [hasCriticalAvailableBalance, hasCriticalMonthBalance, summary]);
   const budgetHealthDescription = useMemo(() => {
     if (!summary) return "";
     if (hasCriticalAvailableBalance) {
       return "Saldo livre negativo considerando mensal e avulsos. Revise o período no Mensal.";
     }
-    if (hasCriticalCommittedBalance) {
+    if (hasCriticalMonthBalance) {
       return "Mensal e avulsos já comprometem mais do que a renda do período. Revise o Mensal antes de seguir.";
     }
-    if (hasCriticalPlannedBalance) {
-      return "O planejamento do mês está acima da renda informada. Revise o Mensal antes de comprometer o saldo.";
-    }
     return `Realizado até agora de um total planejado de ${formatCurrency(summary.total_planned ?? 0)}.`;
-  }, [hasCriticalAvailableBalance, hasCriticalCommittedBalance, hasCriticalPlannedBalance, summary]);
+  }, [hasCriticalAvailableBalance, hasCriticalMonthBalance, summary]);
   const budgetHealthLabel = useMemo(() => {
     if (!summary) return "Sem planejamento";
     if (hasNegativeAlert) return "Ajuste urgente";
@@ -171,26 +163,26 @@ export default function DashboardPage() {
           <div className="metric-card">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="soft-label text-slate-400">Saldo livre</div>
-                <div className={["mt-3 text-3xl font-semibold", hasCriticalAvailableBalance ? "text-rose-300" : "text-white"].join(" ")}>
-                  {formatCurrencyOrFallback(availableBalance, "Informe")}
+                <div className="soft-label text-slate-400">Saldo do mês</div>
+                <div className={["mt-3 text-3xl font-semibold", hasCriticalMonthBalance ? "text-rose-300" : "text-white"].join(" ")}>
+                  {formatCurrencyOrFallback(monthBalance, "Informe")}
                 </div>
               </div>
               <span
                 className={[
                   "rounded-2xl p-3",
-                  hasCriticalAvailableBalance ? "bg-rose-400/15 text-rose-300" : "bg-cyan-400/10 text-cyan-300",
+                  hasCriticalMonthBalance ? "bg-rose-400/15 text-rose-300" : "bg-cyan-400/10 text-cyan-300",
                 ].join(" ")}
               >
                 <Sparkles size={18} />
               </span>
             </div>
-            <p className="mt-3 text-sm text-slate-400">Entradas menos realizado do mensal e gastos avulsos.</p>
+            <p className="mt-3 text-sm text-slate-400">Renda menos orçamento do mês e gastos avulsos.</p>
           </div>
           <div className="metric-card">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="soft-label text-slate-400">Ritmo do mês</div>
+                <div className="soft-label text-slate-400">Total pago (%)</div>
                 <div className={["mt-3 text-3xl font-semibold", hasNegativeAlert ? "text-rose-300" : "text-white"].join(" ")}>
                   {summary ? `${summary.usage_pct.toFixed(0)}%` : "0%"}
                 </div>
@@ -226,7 +218,7 @@ export default function DashboardPage() {
           <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="soft-label text-slate-400">Ritmo do mês</div>
+                <div className="soft-label text-slate-400">Total pago no mês</div>
                 <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary?.total_realized ?? 0)}</div>
                 <p className={["mt-1 text-sm", hasNegativeAlert ? "text-rose-100" : "text-slate-400"].join(" ")}>
                   {budgetHealthDescription}
@@ -248,13 +240,9 @@ export default function DashboardPage() {
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
-              <span className="text-slate-400">{summary?.usage_pct?.toFixed(0) ?? 0}% do orçamento utilizado</span>
+              <span className="text-slate-400">{summary?.usage_pct?.toFixed(0) ?? 0}% do orçamento pago</span>
               <span className={["font-medium", hasNegativeAlert ? "text-rose-200" : "text-white"].join(" ")}>
-                {hasCriticalAvailableBalance
-                  ? `Saldo livre: ${formatCurrencyOrFallback(availableBalance, "Informe a renda")}`
-                  : hasCriticalCommittedBalance
-                    ? `Comprometido: ${formatCurrencyOrFallback(committedBalance, "Informe a renda")}`
-                  : `Saldo planejado: ${formatCurrencyOrFallback(plannedBalance, "Informe a renda")}`}
+                {`Saldo do mês: ${formatCurrencyOrFallback(monthBalance, "Informe a renda")}`}
               </span>
             </div>
           </div>

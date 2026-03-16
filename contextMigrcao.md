@@ -218,3 +218,132 @@ Janela (H0-H72):
 - O objetivo dos agentes e comprimir ao maximo a execucao tecnica.
 - O prazo de aprovacao final em loja continua sujeito a processos externos.
 - O Orquestrador deve manter escopo fechado, evitar retrabalho e focar no caminho critico.
+
+---
+
+## 5) Kickoff prático e resumo inicial entre agentes
+
+### Ordem de disparo recomendada (primeira rodada)
+1. Orquestrador
+2. Agente A (Build Mobile)
+3. Agente B (UX Mobile)
+4. Agente C (Store & Compliance)
+5. Agente D (QA & Release)
+
+### Mensagem pronta para kickoff no Orquestrador
+```text
+Kickoff oficial do ciclo de 2 horas.
+
+Contexto:
+- Ja existem 4 agentes ativos (A Build, B UX, C Compliance, D QA).
+- Objetivo: acelerar release mobile com risco controlado.
+
+Tarefa:
+1) Consolide o status inicial de A/B/C/D.
+2) Liste os bloqueios cruzados por criticidade.
+3) Defina o proximo passo unico de cada agente para as proximas 2 horas.
+4) De um plano integrado com caminho critico.
+5) Informe criterios de Go/No-Go desta rodada.
+
+Formato de resposta obrigatorio:
+- Estado global:
+- Resumo A:
+- Resumo B:
+- Resumo C:
+- Resumo D:
+- Bloqueios cruzados (Top 5):
+- Proximo passo A:
+- Proximo passo B:
+- Proximo passo C:
+- Proximo passo D:
+- Caminho critico:
+- Go/No-Go da rodada:
+```
+
+### O que significa "resumo inicial" de cada agente
+Extrair apenas 5 itens de cada resposta:
+- Status
+- Entregaveis
+- Bloqueios
+- Proximo passo unico
+- Tempo restante estimado
+
+Modelo rapido de consolidacao para colar no Orquestrador:
+- A: status=..., entregou=..., bloqueio=..., proximo=..., ETA=...
+- B: status=..., entregou=..., bloqueio=..., proximo=..., ETA=...
+- C: status=..., entregou=..., bloqueio=..., proximo=..., ETA=...
+- D: status=..., entregou=..., bloqueio=..., proximo=..., ETA=...
+
+---
+
+## 6) Autonomia total vs checkpoints (por que usar este formato)
+
+- Existem ambientes/plataformas que permitem automacao quase total apos input inicial.
+- Neste contexto de trabalho, o modo mais seguro e eficiente e autonomia alta com checkpoints curtos.
+- Motivos:
+  - reduz risco de erro em cadeia;
+  - evita custo descontrolado;
+  - preserva alinhamento de prioridade com o dono do produto;
+  - melhora rastreabilidade de decisao para release.
+- Regra pratica:
+  - agentes executam em paralelo;
+  - sincronizacao a cada 90-120 minutos via Orquestrador;
+  - Orquestrador atualiza caminho critico e redistribui tarefas.
+
+---
+
+## 7) Rotina pronta de sincronizacao (ciclo de 2 horas)
+
+### Bloco para repetir no inicio de cada ciclo
+```text
+Inicio de ciclo (2 horas) - Orquestrador
+
+Objetivo do ciclo:
+- [definir objetivo unico e mensuravel]
+
+Entrada consolidada dos agentes:
+- A: status=..., entregou=..., bloqueio=..., proximo=..., ETA=...
+- B: status=..., entregou=..., bloqueio=..., proximo=..., ETA=...
+- C: status=..., entregou=..., bloqueio=..., proximo=..., ETA=...
+- D: status=..., entregou=..., bloqueio=..., proximo=..., ETA=...
+
+Tarefa do Orquestrador:
+1) Priorizar bloqueios por impacto.
+2) Definir caminho critico do ciclo.
+3) Dar proximo passo unico por agente.
+4) Definir criterio objetivo de encerramento do ciclo.
+
+Formato de saida:
+- Estado global:
+- Top 3 prioridades:
+- Caminho critico:
+- Proximo passo A:
+- Proximo passo B:
+- Proximo passo C:
+- Proximo passo D:
+- Criterio de encerramento do ciclo:
+```
+
+### Bloco para fechamento do ciclo (antes do proximo)
+```text
+Fechamento de ciclo (2 horas) - Orquestrador
+
+Resultado:
+- O que foi concluido:
+- O que ficou pendente:
+- Bloqueio novo:
+- Risco principal:
+
+Decisao:
+- Continuar plano atual | Ajustar escopo | Freeze parcial
+
+Proximo ciclo:
+- Objetivo unico:
+- Dependencias cruzadas:
+- Ordem de execucao recomendada:
+```
+
+### Regra de ouro para evitar caos
+- Um ciclo = um objetivo principal.
+- Cada agente recebe apenas um proximo passo unico por rodada.
+- Se surgir bloqueio critico, o Orquestrador replaneja antes de abrir novo trabalho.

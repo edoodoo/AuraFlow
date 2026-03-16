@@ -47,17 +47,36 @@ export default function DashboardPage() {
   const pendingItems = summary?.pending_items ?? [];
   const monthlyIncome = summary?.monthly_income ?? null;
   const avulsoTotal = summary?.avulso_total ?? 0;
+  const plannedBalance = summary?.planned_balance ?? null;
   const availableBalance = summary?.available_balance ?? null;
-  const hasNegativeAlert = useMemo(() => {
+  const hasCriticalPlannedBalance = useMemo(() => {
+    if (!summary) return false;
+    return (summary.planned_balance ?? 0) < 0;
+  }, [summary]);
+  const hasCriticalAvailableBalance = useMemo(() => {
     if (!summary) return false;
     return (summary.available_balance ?? 0) < 0;
   }, [summary]);
+  const hasNegativeAlert = useMemo(() => {
+    if (!summary) return false;
+    return hasCriticalPlannedBalance || hasCriticalAvailableBalance;
+  }, [hasCriticalAvailableBalance, hasCriticalPlannedBalance, summary]);
+  const budgetHealthDescription = useMemo(() => {
+    if (!summary) return "";
+    if (hasCriticalAvailableBalance) {
+      return "Saldo livre negativo considerando mensal e avulsos. Revise o período no Mensal.";
+    }
+    if (hasCriticalPlannedBalance) {
+      return "O planejamento do mês está acima da renda informada. Revise o Mensal antes de comprometer o saldo.";
+    }
+    return `Realizado até agora de um total planejado de ${formatCurrency(summary.total_planned ?? 0)}.`;
+  }, [summary]);
   const budgetHealthLabel = useMemo(() => {
     if (!summary) return "Sem planejamento";
-    if ((summary.available_balance ?? 0) < 0) return "Ajuste urgente";
+    if (hasNegativeAlert) return "Ajuste urgente";
     if (summary.usage_pct > 80) return "Atenção ao ritmo";
     return "Mês sob controle";
-  }, [summary]);
+  }, [hasNegativeAlert, summary]);
 
   const loadData = async () => {
     setLoading(true);
@@ -142,14 +161,14 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="soft-label text-slate-400">Saldo livre</div>
-                <div className={["mt-3 text-3xl font-semibold", (availableBalance ?? 0) < 0 ? "text-rose-300" : "text-white"].join(" ")}>
+                <div className={["mt-3 text-3xl font-semibold", hasCriticalAvailableBalance ? "text-rose-300" : "text-white"].join(" ")}>
                   {formatCurrencyOrFallback(availableBalance, "Informe")}
                 </div>
               </div>
               <span
                 className={[
                   "rounded-2xl p-3",
-                  (availableBalance ?? 0) < 0 ? "bg-rose-400/15 text-rose-300" : "bg-cyan-400/10 text-cyan-300",
+                  hasCriticalAvailableBalance ? "bg-rose-400/15 text-rose-300" : "bg-cyan-400/10 text-cyan-300",
                 ].join(" ")}
               >
                 <Sparkles size={18} />
@@ -199,9 +218,7 @@ export default function DashboardPage() {
                 <div className="soft-label text-slate-400">Ritmo do mês</div>
                 <div className="mt-2 text-2xl font-semibold text-white">{formatCurrency(summary?.total_realized ?? 0)}</div>
                 <p className={["mt-1 text-sm", hasNegativeAlert ? "text-rose-100" : "text-slate-400"].join(" ")}>
-                  {hasNegativeAlert
-                    ? `Saldo livre negativo considerando mensal e avulsos. Revise o período no Mensal.`
-                    : `Realizado até agora de um total planejado de ${formatCurrency(summary?.total_planned ?? 0)}.`}
+                  {budgetHealthDescription}
                 </p>
               </div>
               <div
@@ -215,14 +232,16 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-900/70">
               <div
-                className={(summary?.total_realized ?? 0) > (summary?.total_planned ?? 0) ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-cyan-400"}
+                className={hasNegativeAlert ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-cyan-400"}
                 style={{ width: `${summary?.usage_pct ?? 0}%` }}
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
               <span className="text-slate-400">{summary?.usage_pct?.toFixed(0) ?? 0}% do orçamento utilizado</span>
-              <span className="font-medium text-white">
-                Saldo livre: {formatCurrencyOrFallback(availableBalance, "Informe a renda")}
+              <span className={["font-medium", hasCriticalAvailableBalance ? "text-rose-200" : "text-white"].join(" ")}>
+                {hasCriticalAvailableBalance
+                  ? `Saldo livre: ${formatCurrencyOrFallback(availableBalance, "Informe a renda")}`
+                  : `Saldo planejado: ${formatCurrencyOrFallback(plannedBalance, "Informe a renda")}`}
               </span>
             </div>
           </div>

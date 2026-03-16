@@ -53,24 +53,35 @@ export default function DashboardPage() {
     if (!summary) return false;
     return (summary.planned_balance ?? 0) < 0;
   }, [summary]);
+  const committedBalance = useMemo(() => {
+    if (!summary || monthlyIncome === null) return null;
+    return monthlyIncome - summary.total_planned - avulsoTotal;
+  }, [avulsoTotal, monthlyIncome, summary]);
+  const hasCriticalCommittedBalance = useMemo(() => {
+    if (committedBalance === null) return false;
+    return committedBalance < 0;
+  }, [committedBalance]);
   const hasCriticalAvailableBalance = useMemo(() => {
     if (!summary) return false;
     return (summary.available_balance ?? 0) < 0;
   }, [summary]);
   const hasNegativeAlert = useMemo(() => {
     if (!summary) return false;
-    return hasCriticalPlannedBalance || hasCriticalAvailableBalance;
-  }, [hasCriticalAvailableBalance, hasCriticalPlannedBalance, summary]);
+    return hasCriticalPlannedBalance || hasCriticalCommittedBalance || hasCriticalAvailableBalance;
+  }, [hasCriticalAvailableBalance, hasCriticalCommittedBalance, hasCriticalPlannedBalance, summary]);
   const budgetHealthDescription = useMemo(() => {
     if (!summary) return "";
     if (hasCriticalAvailableBalance) {
       return "Saldo livre negativo considerando mensal e avulsos. Revise o período no Mensal.";
     }
+    if (hasCriticalCommittedBalance) {
+      return "Mensal e avulsos já comprometem mais do que a renda do período. Revise o Mensal antes de seguir.";
+    }
     if (hasCriticalPlannedBalance) {
       return "O planejamento do mês está acima da renda informada. Revise o Mensal antes de comprometer o saldo.";
     }
     return `Realizado até agora de um total planejado de ${formatCurrency(summary.total_planned ?? 0)}.`;
-  }, [summary]);
+  }, [hasCriticalAvailableBalance, hasCriticalCommittedBalance, hasCriticalPlannedBalance, summary]);
   const budgetHealthLabel = useMemo(() => {
     if (!summary) return "Sem planejamento";
     if (hasNegativeAlert) return "Ajuste urgente";
@@ -238,9 +249,11 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
               <span className="text-slate-400">{summary?.usage_pct?.toFixed(0) ?? 0}% do orçamento utilizado</span>
-              <span className={["font-medium", hasCriticalAvailableBalance ? "text-rose-200" : "text-white"].join(" ")}>
+              <span className={["font-medium", hasNegativeAlert ? "text-rose-200" : "text-white"].join(" ")}>
                 {hasCriticalAvailableBalance
                   ? `Saldo livre: ${formatCurrencyOrFallback(availableBalance, "Informe a renda")}`
+                  : hasCriticalCommittedBalance
+                    ? `Comprometido: ${formatCurrencyOrFallback(committedBalance, "Informe a renda")}`
                   : `Saldo planejado: ${formatCurrencyOrFallback(plannedBalance, "Informe a renda")}`}
               </span>
             </div>

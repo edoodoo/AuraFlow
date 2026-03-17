@@ -108,6 +108,8 @@ const formatCurrencyOrFallback = (value: number | null | undefined, fallback: st
 
 const fieldErrorClass = "border-rose-400/70 ring-1 ring-rose-400/40 focus:border-rose-300 focus:ring-rose-300/40";
 const compactMonthlyFieldClass = "min-h-11 px-3 py-2 text-[13px]";
+const compactMonthlyInlineFieldClass = "min-h-10 px-3 py-2 text-[13px]";
+const compactMonthlySecondaryButtonClass = "inline-flex items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium";
 
 function getCategoryName(category: PlanItem["category"]) {
   if (Array.isArray(category)) return category[0]?.name ?? "Sem categoria";
@@ -782,7 +784,7 @@ export default function MonthlyPlanPage() {
                 </button>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-2 text-sm text-slate-300">
+                <label className="flex items-center gap-2 text-[13px] text-slate-300">
                   <input
                     type="checkbox"
                     checked={newItems[section.key].is_fixed}
@@ -791,7 +793,7 @@ export default function MonthlyPlanPage() {
                   Repetir nos próximos meses
                 </label>
                 <input
-                  className={`max-w-md ${compactMonthlyFieldClass}`}
+                  className={`max-w-md ${compactMonthlyInlineFieldClass}`}
                   placeholder="Observações rápidas"
                   value={newItems[section.key].notes}
                   onChange={(e) => updateNewItem(section.key, { notes: e.target.value })}
@@ -883,7 +885,7 @@ export default function MonthlyPlanPage() {
                       )}
 
                       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[auto_1fr_auto_auto] lg:items-center">
-                        <label className="flex items-center gap-2 text-sm text-slate-300">
+                        <label className="flex items-center gap-2 text-[13px] text-slate-300">
                           <input
                             type="checkbox"
                             checked={draft.is_fixed}
@@ -891,13 +893,13 @@ export default function MonthlyPlanPage() {
                           />
                           Fixo
                         </label>
-                        <input className={compactMonthlyFieldClass} value={draft.notes} onChange={(e) => updateDraft(item.id, { notes: e.target.value })} placeholder="Observações" />
-                        <span className="rounded-full bg-slate-950/40 px-3 py-2 text-xs text-slate-300">
+                        <input className={compactMonthlyInlineFieldClass} value={draft.notes} onChange={(e) => updateDraft(item.id, { notes: e.target.value })} placeholder="Observações" />
+                        <span className="rounded-full bg-slate-950/40 px-3 py-1.5 text-xs text-slate-300">
                           {getCategoryName(item.category)}
                         </span>
                         <button
                           type="button"
-                          className="secondary-button border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
+                          className={`${compactMonthlySecondaryButtonClass} border border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20`}
                           onClick={() => void removeItem(item.id)}
                         >
                           <Trash2 size={14} />

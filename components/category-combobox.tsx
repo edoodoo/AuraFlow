@@ -21,6 +21,8 @@ type CategoryComboboxProps = {
   triggerId?: string;
   dataScope?: string;
   dataField?: string;
+  compact?: boolean;
+  panelClassName?: string;
 };
 
 export function CategoryCombobox({
@@ -35,6 +37,8 @@ export function CategoryCombobox({
   triggerId,
   dataScope,
   dataField,
+  compact = false,
+  panelClassName,
 }: CategoryComboboxProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -108,16 +112,17 @@ export function CategoryCombobox({
           }
         }}
         className={[
-          "flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm outline-none",
+          "flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 text-left outline-none",
           "text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
           "focus-visible:border-cyan-300/60 focus-visible:ring-4 focus-visible:ring-cyan-400/10",
+          compact ? "min-h-11 px-3 py-2 text-[13px]" : "px-4 py-3 text-sm",
           disabled ? "cursor-not-allowed opacity-60" : "hover:bg-white/10",
           className ?? "",
         ].join(" ")}
         data-item-scope={dataScope}
         data-field={dataField}
       >
-        <span className={selectedOption ? "text-slate-100" : "text-slate-400"}>
+        <span className={["min-w-0 flex-1 truncate", selectedOption ? "text-slate-100" : "text-slate-400"].join(" ")}>
           {selectedOption?.label ?? placeholder}
         </span>
         <ChevronDown size={16} className="shrink-0 text-slate-400" />
@@ -126,7 +131,13 @@ export function CategoryCombobox({
       {required && <input tabIndex={-1} className="sr-only" value={value} onChange={() => undefined} required />}
 
       {isOpen && (
-        <div className="absolute z-30 mt-2 w-full rounded-[1.4rem] border border-white/10 bg-slate-950/95 p-2 shadow-2xl backdrop-blur-xl">
+        <div
+          className={[
+            "absolute z-30 mt-2 w-full max-w-[calc(100vw-2rem)] rounded-[1.4rem] border border-white/10 bg-slate-950/95 p-2 shadow-2xl backdrop-blur-xl sm:max-w-none",
+            compact ? "sm:min-w-[18rem]" : "",
+            panelClassName ?? "",
+          ].join(" ")}
+        >
           <div className="relative">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
@@ -154,7 +165,7 @@ export function CategoryCombobox({
                 }
               }}
               placeholder="Buscar categoria"
-              className="pl-9"
+              className={compact ? "min-h-10 py-2 pl-9 text-[13px]" : "pl-9"}
             />
           </div>
 

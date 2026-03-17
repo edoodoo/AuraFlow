@@ -107,6 +107,7 @@ const formatCurrencyOrFallback = (value: number | null | undefined, fallback: st
   value === null || value === undefined ? fallback : formatCurrency(value);
 
 const fieldErrorClass = "border-rose-400/70 ring-1 ring-rose-400/40 focus:border-rose-300 focus:ring-rose-300/40";
+const compactMonthlyFieldClass = "min-h-11 px-3 py-2 text-[13px]";
 
 function getCategoryName(category: PlanItem["category"]) {
   if (Array.isArray(category)) return category[0]?.name ?? "Sem categoria";
@@ -723,14 +724,14 @@ export default function MonthlyPlanPage() {
             </div>
 
             <div className="mt-5 rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_1fr_0.8fr_0.8fr_1fr_auto]">
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_1.25fr_0.7fr_0.8fr_0.95fr_auto]">
                 <input
                   data-item-scope={`new-${section.key}`}
                   data-field="title"
                   placeholder="Título do item"
                   value={newItems[section.key].title}
                   onChange={(e) => updateNewItem(section.key, { title: e.target.value })}
-                  className={getDraftInputClass(Boolean(newItemErrors[section.key].title))}
+                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(newItemErrors[section.key].title))].filter(Boolean).join(" ")}
                 />
                 <CategoryCombobox
                   dataScope={`new-${section.key}`}
@@ -739,6 +740,8 @@ export default function MonthlyPlanPage() {
                   onChange={(nextValue) => updateNewItem(section.key, { category_id: nextValue })}
                   options={categoryOptions}
                   placeholder="Selecione a categoria"
+                  compact
+                  panelClassName="xl:min-w-[22rem]"
                   className={getDraftInputClass(Boolean(newItemErrors[section.key].category_id))}
                 />
                 <input
@@ -749,7 +752,7 @@ export default function MonthlyPlanPage() {
                   placeholder="Valor previsto"
                   value={newItems[section.key].expected_amount}
                   onChange={(e) => updateNewItem(section.key, { expected_amount: e.target.value })}
-                  className={getDraftInputClass(Boolean(newItemErrors[section.key].expected_amount))}
+                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(newItemErrors[section.key].expected_amount))].filter(Boolean).join(" ")}
                 />
                 <input
                   data-item-scope={`new-${section.key}`}
@@ -757,14 +760,14 @@ export default function MonthlyPlanPage() {
                   type="date"
                   value={newItems[section.key].due_date}
                   onChange={(e) => updateNewItem(section.key, { due_date: e.target.value })}
-                  className={getDraftInputClass(Boolean(newItemErrors[section.key].due_date))}
+                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(newItemErrors[section.key].due_date))].filter(Boolean).join(" ")}
                 />
                 <select
                   data-item-scope={`new-${section.key}`}
                   data-field="assigned_user_id"
                   value={newItems[section.key].assigned_user_id}
                   onChange={(e) => updateNewItem(section.key, { assigned_user_id: e.target.value })}
-                  className={getDraftInputClass(Boolean(newItemErrors[section.key].assigned_user_id))}
+                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(newItemErrors[section.key].assigned_user_id))].filter(Boolean).join(" ")}
                 >
                   <option value="">Selecione o responsável</option>
                   {memberOptions.map((member) => (
@@ -788,7 +791,7 @@ export default function MonthlyPlanPage() {
                   Repetir nos próximos meses
                 </label>
                 <input
-                  className="max-w-md"
+                  className={`max-w-md ${compactMonthlyFieldClass}`}
                   placeholder="Observações rápidas"
                   value={newItems[section.key].notes}
                   onChange={(e) => updateNewItem(section.key, { notes: e.target.value })}
@@ -813,13 +816,13 @@ export default function MonthlyPlanPage() {
                       animate={{ opacity: 1, y: 0 }}
                       className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4"
                     >
-                      <div className="grid grid-cols-1 gap-3 2xl:grid-cols-[1.1fr_0.9fr_0.7fr_0.7fr_0.9fr_auto]">
+                      <div className="grid grid-cols-1 gap-3 2xl:grid-cols-[1.05fr_1.25fr_0.7fr_0.8fr_0.95fr_auto]">
                         <input
                           data-item-scope={`item-${item.id}`}
                           data-field="title"
                           value={draft.title}
                           onChange={(e) => updateDraft(item.id, { title: e.target.value })}
-                          className={getDraftInputClass(Boolean(currentItemErrors.title))}
+                          className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.title))].filter(Boolean).join(" ")}
                         />
                         <CategoryCombobox
                           dataScope={`item-${item.id}`}
@@ -828,6 +831,8 @@ export default function MonthlyPlanPage() {
                           onChange={(nextValue) => updateDraft(item.id, { category_id: nextValue })}
                           options={categoryOptions}
                           placeholder="Selecione a categoria"
+                          compact
+                          panelClassName="2xl:min-w-[22rem]"
                           className={getDraftInputClass(Boolean(currentItemErrors.category_id))}
                         />
                         <input
@@ -837,7 +842,7 @@ export default function MonthlyPlanPage() {
                           step="0.01"
                           value={draft.expected_amount}
                           onChange={(e) => updateDraft(item.id, { expected_amount: e.target.value })}
-                          className={getDraftInputClass(Boolean(currentItemErrors.expected_amount))}
+                          className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.expected_amount))].filter(Boolean).join(" ")}
                         />
                         <input
                           data-item-scope={`item-${item.id}`}
@@ -845,14 +850,14 @@ export default function MonthlyPlanPage() {
                           type="date"
                           value={draft.due_date}
                           onChange={(e) => updateDraft(item.id, { due_date: e.target.value })}
-                          className={getDraftInputClass(Boolean(currentItemErrors.due_date))}
+                          className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.due_date))].filter(Boolean).join(" ")}
                         />
                         <select
                           data-item-scope={`item-${item.id}`}
                           data-field="assigned_user_id"
                           value={draft.assigned_user_id}
                           onChange={(e) => updateDraft(item.id, { assigned_user_id: e.target.value })}
-                          className={getDraftInputClass(Boolean(currentItemErrors.assigned_user_id))}
+                          className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.assigned_user_id))].filter(Boolean).join(" ")}
                         >
                           <option value="">Selecione o responsável</option>
                           {memberOptions.map((member) => (
@@ -886,7 +891,7 @@ export default function MonthlyPlanPage() {
                           />
                           Fixo
                         </label>
-                        <input value={draft.notes} onChange={(e) => updateDraft(item.id, { notes: e.target.value })} placeholder="Observações" />
+                        <input className={compactMonthlyFieldClass} value={draft.notes} onChange={(e) => updateDraft(item.id, { notes: e.target.value })} placeholder="Observações" />
                         <span className="rounded-full bg-slate-950/40 px-3 py-2 text-xs text-slate-300">
                           {getCategoryName(item.category)}
                         </span>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CalendarRange, Link2, Plus, ReceiptText, RefreshCw, Trash2 } from "lucide-react";
+import { CategoryCombobox } from "@/components/category-combobox";
 
 type Category = {
   id: string;
@@ -213,6 +214,15 @@ export default function MonthlyPlanPage() {
         items: items.filter((item) => item.section === section.key),
       })),
     [items],
+  );
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        value: category.id,
+        label: `${category.name} · ${category.category_kind === "fixed" ? "fixo" : "variável"}`,
+        keywords: `${category.name} ${category.category_kind === "fixed" ? "fixo" : "variável"}`,
+      })),
+    [categories],
   );
 
   const loadData = async () => {
@@ -722,20 +732,15 @@ export default function MonthlyPlanPage() {
                   onChange={(e) => updateNewItem(section.key, { title: e.target.value })}
                   className={getDraftInputClass(Boolean(newItemErrors[section.key].title))}
                 />
-                <select
-                  data-item-scope={`new-${section.key}`}
-                  data-field="category_id"
+                <CategoryCombobox
+                  dataScope={`new-${section.key}`}
+                  dataField="category_id"
                   value={newItems[section.key].category_id}
-                  onChange={(e) => updateNewItem(section.key, { category_id: e.target.value })}
+                  onChange={(nextValue) => updateNewItem(section.key, { category_id: nextValue })}
+                  options={categoryOptions}
+                  placeholder="Selecione a categoria"
                   className={getDraftInputClass(Boolean(newItemErrors[section.key].category_id))}
-                >
-                  <option value="">Selecione a categoria</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name} · {category.category_kind === "fixed" ? "fixo" : "variável"}
-                    </option>
-                  ))}
-                </select>
+                />
                 <input
                   data-item-scope={`new-${section.key}`}
                   data-field="expected_amount"
@@ -816,20 +821,15 @@ export default function MonthlyPlanPage() {
                           onChange={(e) => updateDraft(item.id, { title: e.target.value })}
                           className={getDraftInputClass(Boolean(currentItemErrors.title))}
                         />
-                        <select
-                          data-item-scope={`item-${item.id}`}
-                          data-field="category_id"
+                        <CategoryCombobox
+                          dataScope={`item-${item.id}`}
+                          dataField="category_id"
                           value={draft.category_id}
-                          onChange={(e) => updateDraft(item.id, { category_id: e.target.value })}
+                          onChange={(nextValue) => updateDraft(item.id, { category_id: nextValue })}
+                          options={categoryOptions}
+                          placeholder="Selecione a categoria"
                           className={getDraftInputClass(Boolean(currentItemErrors.category_id))}
-                        >
-                          <option value="">Selecione a categoria</option>
-                          {categories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name} · {category.category_kind === "fixed" ? "fixo" : "variável"}
-                            </option>
-                          ))}
-                        </select>
+                        />
                         <input
                           data-item-scope={`item-${item.id}`}
                           data-field="expected_amount"

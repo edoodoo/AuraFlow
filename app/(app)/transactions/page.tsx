@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, EllipsisVertical, Link2, Pencil, PlusCircle, ReceiptText, Save, Trash2, Wallet, X } from "lucide-react";
+import { CategoryCombobox } from "@/components/category-combobox";
 
 type Category = { id: string; name: string };
 type PlanItem = {
@@ -67,6 +68,15 @@ export default function TransactionsPage() {
   const [historyNotice, setHistoryNotice] = useState<Notice | null>(null);
   const selectedPlanItem = planItems.find((item) => item.id === form.monthly_plan_item_id) ?? null;
   const hasPaidPlanItems = planItems.some((item) => item.status === "paid");
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        value: category.id,
+        label: category.name,
+        keywords: category.name,
+      })),
+    [categories],
+  );
 
   const loadData = async () => {
     setLoading(true);
@@ -291,17 +301,13 @@ export default function TransactionsPage() {
 
             <div className="space-y-2 md:col-span-2">
               <label className="text-sm font-medium text-slate-200">Categoria</label>
-              <select
+              <CategoryCombobox
                 value={form.category_id}
-                onChange={(e) => setForm((prev) => ({ ...prev, category_id: e.target.value }))}
+                onChange={(nextValue) => setForm((prev) => ({ ...prev, category_id: nextValue }))}
+                options={categoryOptions}
+                placeholder="Selecione a categoria"
                 required={form.transaction_kind === "avulso"}
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">Valor</label>
@@ -479,21 +485,16 @@ export default function TransactionsPage() {
                       <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-slate-200">Categoria</label>
-                          <select
+                          <CategoryCombobox
                             value={editingDraft.category_id}
-                            onChange={(e) => {
-                              setEditingDraft((prev) => (prev ? { ...prev, category_id: e.target.value } : prev));
+                            onChange={(nextValue) => {
+                              setEditingDraft((prev) => (prev ? { ...prev, category_id: nextValue } : prev));
                               setEditingError(null);
                             }}
+                            options={categoryOptions}
+                            placeholder="Selecione a categoria"
                             disabled={savingEditId === t.id}
-                          >
-                            <option value="">Selecione uma categoria</option>
-                            {categories.map((category) => (
-                              <option key={category.id} value={category.id}>
-                                {category.name}
-                              </option>
-                            ))}
-                          </select>
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-slate-200">Valor</label>

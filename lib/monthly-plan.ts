@@ -1,15 +1,6 @@
+import { COMPARISON_SECTION_LABELS, type ComparisonSectionKey, PLAN_SECTIONS, SECTION_LABELS, type PlanSection } from "./monthly-sections";
 import { getSupabaseAdminClient } from "./supabase-admin";
 import type { HouseholdContext } from "./household";
-
-export const PLAN_SECTIONS = ["general", "investments", "emergency_reserve", "debts"] as const;
-export type PlanSection = (typeof PLAN_SECTIONS)[number];
-
-export const SECTION_LABELS: Record<PlanSection, string> = {
-  general: "Gastos mensais",
-  investments: "Investimentos",
-  emergency_reserve: "Reserva de Emergência",
-  debts: "Dívidas",
-};
 
 export type MonthlyPlan = {
   id: string;
@@ -406,7 +397,8 @@ export function buildComparisonRows(
     {
       category_id: string;
       category_name: string;
-      section: string;
+      section_key: ComparisonSectionKey;
+      section_label: string;
       expected_amount: number;
       linked_realized_amount: number;
       avulso_realized_amount: number;
@@ -420,24 +412,26 @@ export function buildComparisonRows(
 
   for (const item of items) {
     const categoryId = item.category_id ?? `uncategorized-${item.section}`;
+    const rowKey = `${item.section}::${categoryId}`;
     const categoryName = getCategoryName(item.category);
-    const current = rows.get(categoryId) ?? {
+    const current = rows.get(rowKey) ?? {
       category_id: categoryId,
       category_name: categoryName,
-      section: item.section,
+      section_key: item.section,
+      section_label: COMPARISON_SECTION_LABELS[item.section],
       expected_amount: 0,
       linked_realized_amount: 0,
       avulso_realized_amount: 0,
       realized_amount: 0,
       contributors: [],
       items_pending: 0,
-        payer_breakdown: [],
+      payer_breakdown: [],
     };
     current.expected_amount += Number(item.expected_amount || 0);
     if (item.status !== "paid") current.items_pending += 1;
-    rows.set(categoryId, current);
-    if (!payerMaps.has(categoryId)) {
-      payerMaps.set(categoryId, new Map());
+    rows.set(rowKey, current);
+    if (!payerMaps.has(rowKey)) {
+      payerMaps.set(rowKey, new Map());
     }
   }
 
@@ -445,17 +439,20 @@ export function buildComparisonRows(
     const categoryId = transaction.category_id;
     const categoryName = getCategoryName(transaction.category);
     const item = transaction.monthly_plan_item_id ? items.find((candidate) => candidate.id === transaction.monthly_plan_item_id) : null;
-    const current = rows.get(categoryId) ?? {
+    const sectionKey: ComparisonSectionKey = transaction.transaction_kind === "avulso" ? "avulso" : item?.section ?? "general";
+    const rowKey = `${sectionKey}::${categoryId}`;
+    const current = rows.get(rowKey) ?? {
       category_id: categoryId,
       category_name: categoryName,
-      section: item?.section ?? "Avulso",
+      section_key: sectionKey,
+      section_label: COMPARISON_SECTION_LABELS[sectionKey],
       expected_amount: 0,
       linked_realized_amount: 0,
       avulso_realized_amount: 0,
       realized_amount: 0,
       contributors: [],
       items_pending: 0,
-        payer_breakdown: [],
+      payer_breakdown: [],
     };
     const amount = Number(transaction.amount || 0);
     current.realized_amount += amount;
@@ -468,17 +465,17 @@ export function buildComparisonRows(
     if (!current.contributors.includes(contributorLabel)) {
       current.contributors.push(contributorLabel);
     }
-    rows.set(categoryId, current);
+    rows.set(rowKey, current);
 
-    const payerMap = payerMaps.get(categoryId) ?? new Map<string, number>();
+    const payerMap = payerMaps.get(rowKey) ?? new Map<string, number>();
     payerMap.set(transaction.user_id, (payerMap.get(transaction.user_id) ?? 0) + Number(transaction.amount || 0));
-    payerMaps.set(categoryId, payerMap);
+    payerMaps.set(rowKey, payerMap);
   }
 
   return [...rows.values()]
     .map((row) => ({
       ...row,
-      payer_breakdown: [...(payerMaps.get(row.category_id) ?? new Map()).entries()]
+      payer_breakdown: [...(payerMaps.get(`${row.section_key}::${row.category_id}`) ?? new Map()).entries()]
         .map(([user_id, total]) => ({
           user_id,
           label: memberLabels[user_id] ?? "Usuário",

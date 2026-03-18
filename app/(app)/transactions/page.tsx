@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, EllipsisVertical, Link2, Pencil, PlusCircle, ReceiptText, Save, Trash2, Wallet, X } from "lucide-react";
+import { ArrowUpDown, Camera, EllipsisVertical, Link2, Pencil, PlusCircle, ReceiptText, Save, Trash2, Wallet, X } from "lucide-react";
 import { CategoryCombobox } from "@/components/category-combobox";
 
 type Category = { id: string; name: string };
@@ -47,6 +47,7 @@ export default function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [form, setForm] = useState({
     transaction_kind: "avulso" as "avulso" | "linked_plan_item",
     monthly_plan_item_id: "",
@@ -77,6 +78,7 @@ export default function TransactionsPage() {
       })),
     [categories],
   );
+  const sortLabel = sortDirection === "desc" ? "Mais recentes" : "Mais antigas";
 
   const loadData = async () => {
     setLoading(true);
@@ -84,7 +86,7 @@ export default function TransactionsPage() {
     try {
       const [cRes, tRes, planRes] = await Promise.all([
         fetch("/api/categories", { cache: "no-store" }),
-        fetch("/api/transactions?limit=20", { cache: "no-store" }),
+        fetch(`/api/transactions?limit=20&sort=${sortDirection}`, { cache: "no-store" }),
         fetch("/api/monthly-plan", { cache: "no-store" }),
       ]);
       if (!cRes.ok || !tRes.ok || !planRes.ok) throw new Error("Falha ao carregar.");
@@ -105,7 +107,7 @@ export default function TransactionsPage() {
   useEffect(() => {
     void loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sortDirection]);
 
   useEffect(() => {
     if (form.transaction_kind !== "linked_plan_item" || !selectedPlanItem || selectedPlanItem.status !== "paid") return;
@@ -374,9 +376,21 @@ export default function TransactionsPage() {
               <div className="soft-label text-slate-400">Histórico recente</div>
               <h2 className="mt-2 text-2xl font-semibold text-white">Últimos lançamentos</h2>
             </div>
-            <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
-              {transactions.length} itens
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"))}
+                className="secondary-button border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 hover:bg-white/10"
+                aria-label={`Ordenar por data: ${sortLabel}`}
+                title={`Ordenar por data: ${sortLabel}`}
+              >
+                <ArrowUpDown size={14} />
+                {sortLabel}
+              </button>
+              <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+                {transactions.length} itens
+              </span>
+            </div>
           </div>
           {loading && <p className="text-sm text-slate-400">Carregando...</p>}
           {historyNotice && (

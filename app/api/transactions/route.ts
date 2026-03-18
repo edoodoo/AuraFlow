@@ -18,6 +18,8 @@ export async function GET(req: Request) {
   const dateFrom = searchParams.get("date_from");
   const dateTo = searchParams.get("date_to");
   const limit = Number(searchParams.get("limit") ?? 50);
+  const sortDirection = searchParams.get("sort") === "asc" ? "asc" : "desc";
+  const isAscending = sortDirection === "asc";
 
   let query = supabase
     .from("transactions")
@@ -25,7 +27,8 @@ export async function GET(req: Request) {
       "id,category_id,amount,description,transaction_date,receipt_url,transaction_kind,monthly_plan_item_id,category:categories(name),plan_item:monthly_plan_items(title,section)",
     )
     .eq("user_id", user.id)
-    .order("transaction_date", { ascending: false })
+    .order("transaction_date", { ascending: isAscending })
+    .order("created_at", { ascending: isAscending })
     .limit(Math.min(200, Math.max(1, limit)));
 
   if (categoryId) query = query.eq("category_id", categoryId);

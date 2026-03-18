@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarRange, TrendingUp } from "lucide-react";
+import { COMPARISON_SECTION_HELPERS, COMPARISON_SECTION_LABELS, COMPARISON_SECTION_ORDER, type ComparisonSectionKey } from "@/lib/monthly-sections";
 
 type Row = {
   category_id: string;
   category_name: string;
-  section: string;
+  section_key: ComparisonSectionKey;
+  section_label: string;
   expected_amount: number;
   linked_realized_amount: number;
   avulso_realized_amount: number;
@@ -27,6 +29,16 @@ export default function ComparisonPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const groupedSections = useMemo(
+    () =>
+      COMPARISON_SECTION_ORDER.map((sectionKey) => ({
+        key: sectionKey,
+        label: COMPARISON_SECTION_LABELS[sectionKey],
+        helper: COMPARISON_SECTION_HELPERS[sectionKey],
+        rows: rows.filter((row) => row.section_key === sectionKey),
+      })),
+    [rows],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -49,7 +61,8 @@ export default function ComparisonPage() {
   }, [month, year]);
 
   return (
-    <div className="glass-surface p-5 sm:p-6">
+    <div className="space-y-6">
+      <div className="glass-surface p-5 sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="soft-label text-slate-400">Planejado vs realizado</div>
@@ -78,80 +91,101 @@ export default function ComparisonPage() {
       </div>
 
       {error && <p className="mt-5 rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
+      </div>
       {loading ? (
         <p className="mt-5 text-sm text-slate-400">Carregando comparação...</p>
       ) : (
-        <div className="mt-5 space-y-3">
-          {rows.map((row) => {
-            const pct = row.expected_amount > 0 ? (row.linked_realized_amount / row.expected_amount) * 100 : 0;
-            const exceeded = row.linked_realized_amount > row.expected_amount;
-            const hasAvulso = row.avulso_realized_amount > 0;
-            const isOnlyAvulso = row.expected_amount <= 0 && row.linked_realized_amount <= 0 && hasAvulso;
-            return (
-              <div
-                key={row.category_id}
-                className={[
-                  "rounded-[1.6rem] border p-4",
-                  exceeded
-                    ? "border-rose-400/20 bg-rose-500/10"
-                    : "border-white/10 bg-white/5",
-                ].join(" ")}
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-base font-medium text-white">{row.category_name}</span>
-                      {exceeded ? (
-                        <AlertTriangle size={15} className="text-rose-300" />
-                      ) : (
-                        <TrendingUp size={15} className="text-emerald-300" />
-                      )}
-                    </div>
-                    <p className="mt-2 text-sm text-slate-400">
-                      Pagamentos lançados por: {row.contributors.length > 0 ? row.contributors.join(", ") : "Sem lançamentos"}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Seção: {row.section} · Itens ainda pendentes: {row.items_pending}
-                    </p>
-                    {hasAvulso && (
-                      <div className="mt-3 inline-flex rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-200">
-                        Avulso fora do mensal: {formatCurrency(row.avulso_realized_amount)}
-                      </div>
-                    )}
-                    {row.payer_breakdown.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                        {row.payer_breakdown.map((payer) => (
-                          <span key={payer.user_id} className="rounded-full bg-slate-950/40 px-2 py-1 text-slate-300">
-                            {payer.label}: {formatCurrency(payer.total)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <span className={["text-sm font-semibold", exceeded ? "text-rose-300" : "text-white"].join(" ")}>
-                    {isOnlyAvulso
-                      ? `Avulso ${formatCurrency(row.avulso_realized_amount)}`
-                      : `${formatCurrency(row.linked_realized_amount)} / ${formatCurrency(row.expected_amount)}`}
-                  </span>
-                </div>
-
-                <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-900/80">
-                  <div
-                    className={exceeded ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-emerald-400"}
-                    style={{ width: `${Math.min(100, pct)}%` }}
-                  />
-                </div>
-
-                <div className="mt-3 flex items-center justify-between gap-3 text-xs">
-                  <span className="text-slate-400">
-                    {isOnlyAvulso ? "Sem orçamento mensal para comparar" : `${pct.toFixed(0)}% do orçamento utilizado`}
-                  </span>
-                  {exceeded && <span className="font-medium text-rose-300">Atenção: categoria excedida</span>}
-                </div>
+        groupedSections.map((section) => (
+          <div key={section.key} className="glass-surface p-5 sm:p-6">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <div className="soft-label text-slate-400">{section.label}</div>
+                <h2 className="mt-2 text-2xl font-semibold text-white">{section.label}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{section.helper}</p>
               </div>
-            );
-          })}
-        </div>
+              <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+                {section.rows.length} categorias
+              </span>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {section.rows.length > 0 ? (
+                section.rows.map((row) => {
+                  const pct = row.expected_amount > 0 ? (row.linked_realized_amount / row.expected_amount) * 100 : 0;
+                  const exceeded = row.linked_realized_amount > row.expected_amount;
+                  const hasAvulso = row.avulso_realized_amount > 0;
+                  const isOnlyAvulso = row.expected_amount <= 0 && row.linked_realized_amount <= 0 && hasAvulso;
+
+                  return (
+                    <div
+                      key={`${row.section_key}-${row.category_id}`}
+                      className={[
+                        "rounded-[1.6rem] border p-4",
+                        exceeded
+                          ? "border-rose-400/20 bg-rose-500/10"
+                          : "border-white/10 bg-white/5",
+                      ].join(" ")}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base font-medium text-white">{row.category_name}</span>
+                            {exceeded ? (
+                              <AlertTriangle size={15} className="text-rose-300" />
+                            ) : (
+                              <TrendingUp size={15} className="text-emerald-300" />
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm text-slate-400">
+                            Pagamentos lançados por: {row.contributors.length > 0 ? row.contributors.join(", ") : "Sem lançamentos"}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">Itens ainda pendentes: {row.items_pending}</p>
+                          {hasAvulso && (
+                            <div className="mt-3 inline-flex rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-200">
+                              Avulso fora do mensal: {formatCurrency(row.avulso_realized_amount)}
+                            </div>
+                          )}
+                          {row.payer_breakdown.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                              {row.payer_breakdown.map((payer) => (
+                                <span key={payer.user_id} className="rounded-full bg-slate-950/40 px-2 py-1 text-slate-300">
+                                  {payer.label}: {formatCurrency(payer.total)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <span className={["text-sm font-semibold", exceeded ? "text-rose-300" : "text-white"].join(" ")}>
+                          {isOnlyAvulso
+                            ? `Avulso ${formatCurrency(row.avulso_realized_amount)}`
+                            : `${formatCurrency(row.linked_realized_amount)} / ${formatCurrency(row.expected_amount)}`}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-900/80">
+                        <div
+                          className={exceeded ? "h-full rounded-full bg-rose-400" : "h-full rounded-full bg-emerald-400"}
+                          style={{ width: `${Math.min(100, pct)}%` }}
+                        />
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                        <span className="text-slate-400">
+                          {isOnlyAvulso ? "Sem orçamento mensal para comparar" : `${pct.toFixed(0)}% do orçamento utilizado`}
+                        </span>
+                        {exceeded && <span className="font-medium text-rose-300">Atenção: categoria excedida</span>}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-slate-950/20 p-5 text-sm text-slate-400">
+                  Nenhum lançamento encontrado nesta seção no período selecionado.
+                </div>
+              )}
+            </div>
+          </div>
+        ))
       )}
     </div>
   );

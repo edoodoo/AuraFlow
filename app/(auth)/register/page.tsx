@@ -9,6 +9,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -18,6 +20,10 @@ export default function RegisterPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("Informe nome e sobrenome para continuar.");
+      return;
+    }
     if (password !== confirm) {
       setError("As senhas não conferem.");
       return;
@@ -25,7 +31,16 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const supabase = getSupabaseBrowserClient();
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+          },
+        },
+      });
       if (signUpError) throw signUpError;
       router.replace("/dashboard");
       router.refresh();
@@ -49,6 +64,30 @@ export default function RegisterPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Nome</label>
+            <input
+              type="text"
+              placeholder="Eduardo"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="border-slate-200 bg-white text-slate-950 placeholder:text-slate-400 focus:border-sky-300"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Sobrenome</label>
+            <input
+              type="text"
+              placeholder="Araujo"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="border-slate-200 bg-white text-slate-950 placeholder:text-slate-400 focus:border-sky-300"
+              required
+            />
+          </div>
+        </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">E-mail</label>
           <input

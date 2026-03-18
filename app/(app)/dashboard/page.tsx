@@ -47,7 +47,6 @@ export default function DashboardPage() {
   const pendingItems = summary?.pending_items ?? [];
   const monthlyIncome = summary?.monthly_income ?? null;
   const avulsoTotal = summary?.avulso_total ?? 0;
-  const availableBalance = summary?.available_balance ?? null;
   const monthBalance = useMemo(() => {
     if (!summary || monthlyIncome === null) return null;
     return monthlyIncome - summary.total_planned - avulsoTotal;

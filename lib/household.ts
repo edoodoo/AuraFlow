@@ -3,6 +3,7 @@ import { getSupabaseAdminClient } from "./supabase-admin";
 type MinimalUser = {
   id: string;
   email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
 };
 
 type HouseholdRow = {
@@ -21,6 +22,9 @@ type HouseholdMemberRow = {
 export type HouseholdMember = {
   user_id: string;
   email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string;
   role: "owner" | "partner";
 };
 
@@ -41,6 +45,41 @@ export function normalizeEmail(email?: string | null) {
   return email?.trim().toLowerCase() || null;
 }
 
+function readUserMetadataName(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized || null;
+}
+
+function resolveDisplayName({
+  email,
+  first_name,
+  last_name,
+}: {
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+}) {
+  return first_name || last_name || email || "Usuário";
+}
+
+function mapAuthUserIdentity(user?: { email?: string | null; user_metadata?: Record<string, unknown> | null } | null) {
+  const first_name = readUserMetadataName(user?.user_metadata?.first_name);
+  const last_name = readUserMetadataName(user?.user_metadata?.last_name);
+  const email = user?.email ?? null;
+
+  return {
+    email,
+    first_name,
+    last_name,
+    display_name: resolveDisplayName({ email, first_name, last_name }),
+  };
+}
+
+export function getUserDisplayName(user?: { email?: string | null; user_metadata?: Record<string, unknown> | null } | null) {
+  return mapAuthUserIdentity(user).display_name;
+}
+
 async function findAuthUserByEmail(email: string) {
   const admin = getSupabaseAdminClient();
   const normalized = normalizeEmail(email);
@@ -52,11 +91,19 @@ async function findAuthUserByEmail(email: string) {
   return data.users.find((candidate) => normalizeEmail(candidate.email) === normalized) ?? null;
 }
 
-async function getUserEmail(userId: string) {
+async function getUserIdentity(userId: string) {
   const admin = getSupabaseAdminClient();
   const { data, error } = await admin.auth.admin.getUserById(userId);
-  if (error) return null;
-  return data.user.email ?? null;
+  if (error) {
+    return {
+      email: null,
+      first_name: null,
+      last_name: null,
+      display_name: "Usuário",
+    };
+  }
+
+  return mapAuthUserIdentity(data.user);
 }
 
 async function ensureOwnerMembership(householdId: string, ownerUserId: string) {
@@ -143,11 +190,14 @@ async function listMembers(householdId: string) {
   if (error) throw error;
 
   const rows = data ?? [];
-  const emails = await Promise.all(rows.map((row) => getUserEmail(row.user_id)));
+  const identities = await Promise.all(rows.map((row) => getUserIdentity(row.user_id)));
 
   return rows.map((row, index) => ({
     user_id: row.user_id,
-    email: emails[index],
+    email: identities[index].email,
+    first_name: identities[index].first_name,
+    last_name: identities[index].last_name,
+    display_name: identities[index].display_name,
     role: row.role,
   }));
 }

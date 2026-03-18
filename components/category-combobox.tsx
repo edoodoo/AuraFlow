@@ -60,6 +60,7 @@ export function CategoryCombobox({
       return haystack.includes(normalizedQuery);
     });
   }, [options, query]);
+  const effectiveHighlightedIndex = Math.min(highlightedIndex, Math.max(filteredOptions.length - 1, 0));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -77,14 +78,8 @@ export function CategoryCombobox({
 
   useEffect(() => {
     if (!isOpen) return;
-    setHighlightedIndex(0);
     searchInputRef.current?.focus();
   }, [isOpen]);
-
-  useEffect(() => {
-    if (highlightedIndex <= filteredOptions.length - 1) return;
-    setHighlightedIndex(0);
-  }, [filteredOptions.length, highlightedIndex]);
 
   const commitSelection = (nextValue: string) => {
     onChange(nextValue);
@@ -102,12 +97,19 @@ export function CategoryCombobox({
         aria-expanded={isOpen}
         onClick={() => {
           if (disabled) return;
-          setIsOpen((prev) => !prev);
+          setIsOpen((prev) => {
+            const nextOpen = !prev;
+            if (nextOpen) {
+              setHighlightedIndex(0);
+            }
+            return nextOpen;
+          });
         }}
         onKeyDown={(event) => {
           if (disabled) return;
           if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
             event.preventDefault();
+            setHighlightedIndex(0);
             setIsOpen(true);
           }
         }}
@@ -144,7 +146,10 @@ export function CategoryCombobox({
               ref={searchInputRef}
               type="text"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setHighlightedIndex(0);
+              }}
               onKeyDown={(event) => {
                 if (event.key === "ArrowDown") {
                   event.preventDefault();
@@ -154,9 +159,9 @@ export function CategoryCombobox({
                   event.preventDefault();
                   setHighlightedIndex((prev) => Math.max(prev - 1, 0));
                 }
-                if (event.key === "Enter" && filteredOptions[highlightedIndex]) {
+                if (event.key === "Enter" && filteredOptions[effectiveHighlightedIndex]) {
                   event.preventDefault();
-                  commitSelection(filteredOptions[highlightedIndex].value);
+                  commitSelection(filteredOptions[effectiveHighlightedIndex].value);
                 }
                 if (event.key === "Escape") {
                   event.preventDefault();
@@ -174,7 +179,7 @@ export function CategoryCombobox({
               <div role="listbox" className="space-y-1">
                 {filteredOptions.map((option, index) => {
                   const isSelected = option.value === value;
-                  const isHighlighted = index === highlightedIndex;
+                  const isHighlighted = index === effectiveHighlightedIndex;
 
                   return (
                     <button

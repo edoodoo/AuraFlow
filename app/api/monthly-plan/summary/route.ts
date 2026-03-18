@@ -41,11 +41,18 @@ export async function GET(req: Request) {
   const transactions = await listHouseholdTransactions(context, month, year);
   const monthlyIncome = await getMonthlyHouseholdIncome(context, month, year);
   const memberLabels = Object.fromEntries(
-    context.household.members.map((member) => [member.user_id, member.email ?? "Usuário"]),
+    context.household.members.map((member) => [member.user_id, member.display_name]),
   );
 
   return NextResponse.json({
-    household: context.household,
+    household: {
+      ...context.household,
+      members: context.household.members.map((member) => ({
+        user_id: member.user_id,
+        label: member.display_name,
+        role: member.role,
+      })),
+    },
     plan,
     summary: buildMonthlySummary(items, transactions, memberLabels, monthlyIncome?.income_amount ?? null),
   });

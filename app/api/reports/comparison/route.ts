@@ -23,7 +23,7 @@ export async function GET(req: Request) {
   const items = plan ? await listMonthlyPlanItems(plan.id) : [];
   const transactions = await listHouseholdTransactions(context, month, year);
   const memberLabels = Object.fromEntries(
-    context.household.members.map((member) => [member.user_id, member.email ?? "Usuário"]),
+    context.household.members.map((member) => [member.user_id, member.display_name]),
   );
   const rows = buildComparisonRows(items, transactions, memberLabels);
 

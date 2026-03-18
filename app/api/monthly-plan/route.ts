@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUserForRoute } from "@/lib/auth";
-import { createOrUpdateHousehold, getHouseholdContext, listVisibleCategories } from "@/lib/household";
+import { createOrUpdateHousehold, getHouseholdContext, getUserDisplayName, listVisibleCategories } from "@/lib/household";
 import { buildMonthlySummary, getMonthlyHouseholdIncome, getMonthlyPlan, getOrCreateMonthlyPlan, listHouseholdTransactions, listMonthlyPlanItems } from "@/lib/monthly-plan";
 import { monthlyPlanRequestSchema } from "@/lib/validators";
 
@@ -10,6 +10,35 @@ function getMonthAndYear(url: string) {
   const month = Number(searchParams.get("month") ?? now.getMonth() + 1);
   const year = Number(searchParams.get("year") ?? now.getFullYear());
   return { month, year };
+}
+
+function buildMemberOptions(
+  members: Array<{ user_id: string; display_name: string; role: "owner" | "partner" }>,
+) {
+  return members.map((member) => ({
+    user_id: member.user_id,
+    label: member.display_name,
+    role: member.role,
+  }));
+}
+
+function buildHouseholdResponse(
+  household:
+    | {
+        id: string;
+        owner_user_id: string;
+        partner_email: string | null;
+        created_at: string;
+        members: Array<{ user_id: string; display_name: string; role: "owner" | "partner" }>;
+      }
+    | null,
+) {
+  if (!household) return null;
+
+  return {
+    ...household,
+    members: buildMemberOptions(household.members),
+  };
 }
 
 export async function GET(req: Request) {
@@ -23,7 +52,7 @@ export async function GET(req: Request) {
   if (!context.household) {
     return NextResponse.json({
       household: null,
-      member_options: [{ user_id: user.id, label: user.email ?? "Você", role: "owner" }],
+      member_options: [{ user_id: user.id, label: getUserDisplayName(user), role: "owner" }],
       categories,
       plan: null,
       items: [],
@@ -35,17 +64,12 @@ export async function GET(req: Request) {
   const items = plan ? await listMonthlyPlanItems(plan.id) : [];
   const transactions = await listHouseholdTransactions(context, month, year);
   const monthlyIncome = await getMonthlyHouseholdIncome(context, month, year);
-  const memberLabels = Object.fromEntries(
-    context.household.members.map((member) => [member.user_id, member.email ?? "Usuário"]),
-  );
+  const memberOptions = buildMemberOptions(context.household.members);
+  const memberLabels = Object.fromEntries(memberOptions.map((member) => [member.user_id, member.label]));
 
   return NextResponse.json({
-    household: context.household,
-    member_options: context.household.members.map((member) => ({
-      user_id: member.user_id,
-      label: member.email ?? "Usuário",
-      role: member.role,
-    })),
+    household: buildHouseholdResponse(context.household),
+    member_options: memberOptions,
     categories,
     plan,
     items,
@@ -70,17 +94,12 @@ export async function POST(req: Request) {
     const transactions = await listHouseholdTransactions(householdContext, parsed.data.month, parsed.data.year);
     const monthlyIncome = await getMonthlyHouseholdIncome(householdContext, parsed.data.month, parsed.data.year);
     const categories = await listVisibleCategories(householdContext);
-    const memberLabels = Object.fromEntries(
-      (householdContext.household?.members ?? []).map((member) => [member.user_id, member.email ?? "Usuário"]),
-    );
+    const memberOptions = buildMemberOptions(householdContext.household?.members ?? []);
+    const memberLabels = Object.fromEntries(memberOptions.map((member) => [member.user_id, member.label]));
 
     return NextResponse.json({
-      household: householdContext.household,
-      member_options: (householdContext.household?.members ?? []).map((member) => ({
-        user_id: member.user_id,
-        label: member.email ?? "Usuário",
-        role: member.role,
-      })),
+      household: buildHouseholdResponse(householdContext.household),
+      member_options: memberOptions,
       categories,
       plan,
       items,

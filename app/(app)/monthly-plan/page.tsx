@@ -727,7 +727,7 @@ export default function MonthlyPlanPage() {
             </div>
 
             <div className="mt-5 rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_1.25fr_0.7fr_0.8fr_0.95fr_auto]">
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_1.2fr_0.68fr_0.8fr_1.12fr_auto]">
                 <input
                   data-item-scope={`new-${section.key}`}
                   data-field="title"
@@ -779,9 +779,14 @@ export default function MonthlyPlanPage() {
                     </option>
                   ))}
                 </select>
-                <button type="button" className="primary-button" onClick={() => void createItem(section.key)} disabled={!plan || saving}>
+                <button
+                  type="button"
+                  className="primary-button px-4"
+                  onClick={() => void createItem(section.key)}
+                  disabled={!plan || saving}
+                >
                   <Plus size={16} />
-                  Adicionar
+                  Add
                 </button>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -819,7 +824,7 @@ export default function MonthlyPlanPage() {
                       animate={{ opacity: 1, y: 0 }}
                       className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4"
                     >
-                      <div className="grid grid-cols-1 gap-3 2xl:grid-cols-[1.05fr_1.25fr_0.7fr_0.8fr_0.95fr_auto]">
+                      <div className="grid grid-cols-1 gap-3 2xl:grid-cols-[1.05fr_1.2fr_0.68fr_0.8fr_1.12fr_auto]">
                         <input
                           data-item-scope={`item-${item.id}`}
                           data-field="title"

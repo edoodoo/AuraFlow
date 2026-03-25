@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#08111f"/>
+      <stop offset="100%" stop-color="#13243b"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#13233a"/>
+      <stop offset="100%" stop-color="#0f1b2c"/>
+    </linearGradient>
+    <linearGradient id="partialCard" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4b3a0b"/>
+      <stop offset="100%" stop-color="#241a05"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1440" height="960" fill="url(#bg)"/>
+
+  <rect x="32" y="32" width="1376" height="896" rx="28" fill="#0d1726" stroke="#334155" stroke-opacity="0.55"/>
+  <text x="72" y="92" fill="#94a3b8" font-family="Inter, Segoe UI, Arial" font-size="14" letter-spacing="2">TELA DE LANCAMENTOS</text>
+  <text x="72" y="136" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="34" font-weight="700">Pagamentos parciais com destaque visual</text>
+  <text x="72" y="170" fill="#9fb0c9" font-family="Inter, Segoe UI, Arial" font-size="18">Borda e fundo amarelos suaves sinalizam item ainda em aberto.</text>
+
+  <rect x="72" y="214" width="470" height="654" rx="26" fill="url(#panel)" stroke="#334155" stroke-opacity="0.6"/>
+  <text x="104" y="260" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial" font-size="13" letter-spacing="2">NOVO LANCAMENTO</text>
+  <text x="104" y="304" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="28" font-weight="700">Registrar gasto</text>
+  <rect x="104" y="340" width="188" height="46" rx="16" fill="#0f172a" stroke="#22d3ee" stroke-opacity="0.55"/>
+  <text x="136" y="369" fill="#e2e8f0" font-family="Inter, Segoe UI, Arial" font-size="17">Gasto avulso</text>
+  <rect x="306" y="340" width="188" height="46" rx="16" fill="#082f49" stroke="#22d3ee" stroke-opacity="0.7"/>
+  <text x="333" y="369" fill="#cffafe" font-family="Inter, Segoe UI, Arial" font-size="17" font-weight="600">Vincular ao mensal</text>
+
+  <text x="104" y="434" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial" font-size="15">Item do mensal</text>
+  <rect x="104" y="452" width="406" height="54" rx="16" fill="#111c2e" stroke="#334155" stroke-opacity="0.7"/>
+  <text x="124" y="486" fill="#f8fafc" font-family="Inter, Segoe UI, Arial" font-size="16">Internet residencial - R$ 100,00 - parcial</text>
+
+  <text x="104" y="566" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial" font-size="15">Valor</text>
+  <rect x="104" y="584" width="190" height="54" rx="16" fill="#111c2e" stroke="#334155" stroke-opacity="0.7"/>
+  <text x="124" y="618" fill="#f8fafc" font-family="Inter, Segoe UI, Arial" font-size="16">30,00</text>
+  <text x="320" y="566" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial" font-size="15">Data</text>
+  <rect x="320" y="584" width="190" height="54" rx="16" fill="#111c2e" stroke="#334155" stroke-opacity="0.7"/>
+  <text x="340" y="618" fill="#f8fafc" font-family="Inter, Segoe UI, Arial" font-size="16">25/03/2026</text>
+
+  <rect x="104" y="702" width="406" height="60" rx="18" fill="#06b6d4"/>
+  <text x="218" y="740" fill="#06202a" font-family="Inter, Segoe UI, Arial" font-size="19" font-weight="700">Registrar gasto</text>
+
+  <rect x="574" y="214" width="794" height="654" rx="26" fill="url(#panel)" stroke="#334155" stroke-opacity="0.6"/>
+  <text x="606" y="260" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial" font-size="13" letter-spacing="2">HISTORICO RECENTE</text>
+  <text x="606" y="304" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="28" font-weight="700">Ultimos lancamentos</text>
+
+  <rect x="606" y="344" width="730" height="176" rx="24" fill="url(#partialCard)" stroke="#facc15" stroke-width="2.5" stroke-opacity="0.9"/>
+  <rect x="632" y="372" width="46" height="46" rx="14" fill="#fde68a" fill-opacity="0.14"/>
+  <text x="645" y="401" fill="#fde68a" font-family="Inter, Segoe UI, Arial" font-size="21" font-weight="700">$</text>
+  <text x="696" y="392" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="24" font-weight="700">Internet</text>
+  <text x="696" y="424" fill="#fef3c7" font-family="Inter, Segoe UI, Arial" font-size="17">Pagamento do item mensal: Internet residencial</text>
+
+  <rect x="696" y="448" width="140" height="32" rx="16" fill="#fde68a" fill-opacity="0.14"/>
+  <text x="718" y="469" fill="#fef3c7" font-family="Inter, Segoe UI, Arial" font-size="14">Ligado ao mensal</text>
+  <rect x="846" y="448" width="168" height="32" rx="16" fill="#fde68a" fill-opacity="0.14"/>
+  <text x="870" y="469" fill="#fff7d6" font-family="Inter, Segoe UI, Arial" font-size="14" font-weight="600">Pagamento parcial</text>
+
+  <rect x="696" y="494" width="250" height="62" rx="18" fill="#fde68a" fill-opacity="0.10" stroke="#fde68a" stroke-opacity="0.25"/>
+  <text x="718" y="520" fill="#fef3c7" font-family="Inter, Segoe UI, Arial" font-size="14">Valor pendente</text>
+  <text x="718" y="546" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="24" font-weight="700">R$ 70,00</text>
+
+  <text x="1184" y="394" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="28" font-weight="700">R$ 30,00</text>
+  <text x="1184" y="546" fill="#fde68a" font-family="Inter, Segoe UI, Arial" font-size="15">25/03/2026</text>
+
+  <rect x="606" y="548" width="730" height="124" rx="24" fill="#111c2e" stroke="#334155" stroke-opacity="0.55"/>
+  <text x="696" y="596" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="22" font-weight="700">Mercado</text>
+  <text x="696" y="626" fill="#94a3b8" font-family="Inter, Segoe UI, Arial" font-size="16">Compra da semana</text>
+  <rect x="696" y="642" width="90" height="28" rx="14" fill="#1e293b"/>
+  <text x="720" y="660" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial" font-size="13">Avulso</text>
+  <text x="1184" y="598" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="24" font-weight="700">R$ 128,40</text>
+
+  <rect x="606" y="690" width="730" height="124" rx="24" fill="#111c2e" stroke="#334155" stroke-opacity="0.55"/>
+  <text x="696" y="738" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="22" font-weight="700">Streaming</text>
+  <text x="696" y="768" fill="#94a3b8" font-family="Inter, Segoe UI, Arial" font-size="16">Assinatura do mùs</text>
+  <rect x="696" y="784" width="140" height="28" rx="14" fill="#083344"/>
+  <text x="718" y="802" fill="#a5f3fc" font-family="Inter, Segoe UI, Arial" font-size="13">Ligado ao mensal</text>
+  <text x="1184" y="740" fill="#ffffff" font-family="Inter, Segoe UI, Arial" font-size="24" font-weight="700">R$ 55,90</text>
+</svg>

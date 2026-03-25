@@ -43,6 +43,8 @@ type PlanItem = {
   assigned_user_id: string | null;
   paid_by_user_id: string | null;
   paid_at: string | null;
+  paid_amount: number;
+  remaining_amount: number;
   notes: string | null;
   category: { name: string } | { name: string }[] | null;
 };
@@ -115,6 +117,12 @@ const compactMonthlySummaryCardClass = "rounded-2xl bg-slate-950/40 px-4 py-2.5 
 function getCategoryName(category: PlanItem["category"]) {
   if (Array.isArray(category)) return category[0]?.name ?? "Sem categoria";
   return category?.name ?? "Sem categoria";
+}
+
+function getPaymentStatusLabel(item: PlanItem) {
+  if (item.status === "paid") return "Pago";
+  if (item.status === "partial") return `Parcial - ${formatCurrency(item.paid_amount)}`;
+  return "Pendente";
 }
 
 function createBlankItemDraft(): ItemDraft {
@@ -920,9 +928,7 @@ export default function MonthlyPlanPage() {
                         </div>
                         <div className={compactMonthlySummaryCardClass}>
                           <div className="text-slate-400">Status</div>
-                          <div className="mt-1 font-medium text-white">
-                            {item.status === "paid" ? "Pago" : item.status === "partial" ? "Parcial" : "Pendente"}
-                          </div>
+                          <div className="mt-1 font-medium text-white">{getPaymentStatusLabel(item)}</div>
                         </div>
                         <div className={compactMonthlySummaryCardClass}>
                           <div className="text-slate-400">Quem pagou / data</div>

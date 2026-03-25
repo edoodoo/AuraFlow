@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireUserForRoute } from "@/lib/auth";
 import { createOrUpdateHousehold, getHouseholdContext, getUserDisplayName, listVisibleCategories } from "@/lib/household";
-import { buildMonthlySummary, getMonthlyHouseholdIncome, getMonthlyPlan, getOrCreateMonthlyPlan, listHouseholdTransactions, listMonthlyPlanItems } from "@/lib/monthly-plan";
+import {
+  attachMonthlyPlanPaymentState,
+  buildMonthlySummary,
+  getMonthlyHouseholdIncome,
+  getMonthlyPlan,
+  getOrCreateMonthlyPlan,
+  listHouseholdTransactions,
+  listMonthlyPlanItems,
+} from "@/lib/monthly-plan";
 import { monthlyPlanRequestSchema } from "@/lib/validators";
 
 function getMonthAndYear(url: string) {
@@ -61,8 +69,9 @@ export async function GET(req: Request) {
   }
 
   const plan = await getMonthlyPlan(context, month, year);
-  const items = plan ? await listMonthlyPlanItems(plan.id) : [];
+  const baseItems = plan ? await listMonthlyPlanItems(plan.id) : [];
   const transactions = await listHouseholdTransactions(context, month, year);
+  const items = attachMonthlyPlanPaymentState(baseItems, transactions);
   const monthlyIncome = await getMonthlyHouseholdIncome(context, month, year);
   const memberOptions = buildMemberOptions(context.household.members);
   const memberLabels = Object.fromEntries(memberOptions.map((member) => [member.user_id, member.label]));
@@ -90,8 +99,9 @@ export async function POST(req: Request) {
 
     const householdContext = await createOrUpdateHousehold(user, parsed.data.partner_email || null);
     const plan = await getOrCreateMonthlyPlan(householdContext, parsed.data.month, parsed.data.year);
-    const items = await listMonthlyPlanItems(plan.id);
+    const baseItems = await listMonthlyPlanItems(plan.id);
     const transactions = await listHouseholdTransactions(householdContext, parsed.data.month, parsed.data.year);
+    const items = attachMonthlyPlanPaymentState(baseItems, transactions);
     const monthlyIncome = await getMonthlyHouseholdIncome(householdContext, parsed.data.month, parsed.data.year);
     const categories = await listVisibleCategories(householdContext);
     const memberOptions = buildMemberOptions(householdContext.household?.members ?? []);

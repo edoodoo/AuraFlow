@@ -39,6 +39,11 @@ export type MonthlyPlanItem = {
   category: { name: string } | { name: string }[] | null;
 };
 
+export type MonthlyPlanItemWithPaymentState = MonthlyPlanItem & {
+  paid_amount: number;
+  remaining_amount: number;
+};
+
 export type HouseholdTransaction = {
   id: string;
   user_id: string;
@@ -203,6 +208,32 @@ export async function listHouseholdTransactions(context: HouseholdContext, month
 
   if (error) throw error;
   return data ?? [];
+}
+
+export function attachMonthlyPlanPaymentState(
+  items: MonthlyPlanItem[],
+  transactions: HouseholdTransaction[],
+): MonthlyPlanItemWithPaymentState[] {
+  const paidByItemId = new Map<string, number>();
+
+  for (const transaction of transactions) {
+    if (transaction.transaction_kind !== "linked_plan_item" || !transaction.monthly_plan_item_id) continue;
+    paidByItemId.set(
+      transaction.monthly_plan_item_id,
+      (paidByItemId.get(transaction.monthly_plan_item_id) ?? 0) + Number(transaction.amount || 0),
+    );
+  }
+
+  return items.map((item) => {
+    const expectedAmount = Number(item.expected_amount || 0);
+    const paidAmount = paidByItemId.get(item.id) ?? 0;
+
+    return {
+      ...item,
+      paid_amount: paidAmount,
+      remaining_amount: Math.max(expectedAmount - paidAmount, 0),
+    };
+  });
 }
 
 function getCategoryName(category: HouseholdTransaction["category"] | MonthlyPlanItem["category"]) {

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, CalendarDays, LayoutDashboard, LogOut, ReceiptText, Tags } from "lucide-react";
+import { BarChart3, CalendarDays, LayoutDashboard, LogOut, ReceiptText, Scale, Tags } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { BrandMark } from "./brand-mark";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-const links = [
+const BASE_LINKS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/monthly-plan", label: "Mensal", icon: CalendarDays },
   { href: "/categories", label: "Categorias", icon: Tags },
@@ -15,9 +16,24 @@ const links = [
   { href: "/comparison", label: "Comparação", icon: BarChart3 },
 ];
 
+const REBALANCING_LINK = { href: "/rebalancing", label: "Carteira", icon: Scale };
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [rebalancingAllowed, setRebalancingAllowed] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/rebalancing/access")
+      .then((r) => r.json())
+      .then((data) => setRebalancingAllowed(data.allowed === true))
+      .catch(() => {});
+  }, []);
+
+  const links = useMemo(() => {
+    if (rebalancingAllowed) return [...BASE_LINKS, REBALANCING_LINK];
+    return BASE_LINKS;
+  }, [rebalancingAllowed]);
 
   const logout = async () => {
     const supabase = getSupabaseBrowserClient();
@@ -102,7 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav className="safe-bottom fixed inset-x-4 bottom-0 z-30 md:hidden">
-        <div className="glass-surface grid grid-cols-6 gap-2 px-3 py-3">
+        <div className={["glass-surface grid gap-2 px-3 py-3", links.length >= 6 ? "grid-cols-7" : "grid-cols-6"].join(" ")}>
           {links.map((link) => {
             const active = pathname === link.href;
             const Icon = link.icon;

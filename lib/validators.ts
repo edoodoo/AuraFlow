@@ -72,3 +72,18 @@ export const monthlyPlanExportSchema = z.object({
   target_year: z.number().int().min(2000).max(3000),
 });
 
+export const portfolioAssetSchema = z.object({
+  ticker: z.string().trim().min(1).max(10),
+  label: z.string().trim().max(60).optional(),
+  target_pct: z.number().min(0).max(100),
+  is_active: z.boolean().default(true),
+});
+
+export const portfolioStateSchema = z.object({
+  total_invested: z.number().min(0),
+});
+
+export const rebalancingCalcSchema = z.object({
+  contribution_amount: z.number().positive(),
+});
+

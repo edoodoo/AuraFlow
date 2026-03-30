@@ -23,14 +23,17 @@ BEGIN;
 -- -------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS portfolio_assets (
-  id         UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id    UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  ticker     TEXT        NOT NULL,
-  label      TEXT,
-  target_pct NUMERIC(5,2) NOT NULL
-               CONSTRAINT chk_target_pct CHECK (target_pct >= 0 AND target_pct <= 100),
-  is_active  BOOLEAN     NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  id                UUID         DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id           UUID         NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  ticker            TEXT         NOT NULL,
+  label             TEXT,
+  target_pct        NUMERIC(5,2) NOT NULL
+                      CONSTRAINT chk_target_pct CHECK (target_pct >= 0 AND target_pct <= 100),
+  current_value_cad NUMERIC(14,2) NOT NULL DEFAULT 0
+                      CONSTRAINT chk_current_value_cad CHECK (current_value_cad >= 0),
+  is_active         BOOLEAN      NOT NULL DEFAULT TRUE,
+  created_at        TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ  NOT NULL DEFAULT now(),
   CONSTRAINT uq_user_ticker UNIQUE (user_id, ticker)
 );
 
@@ -45,12 +48,18 @@ CREATE INDEX IF NOT EXISTS idx_portfolio_assets_user_id
 -- -------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS portfolio_state (
-  id             UUID         DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id        UUID         NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  total_invested NUMERIC(14,2) NOT NULL DEFAULT 0
-                   CONSTRAINT chk_total_invested CHECK (total_invested >= 0),
-  currency       TEXT         NOT NULL DEFAULT 'CAD',
-  updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  id                       UUID         DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id                  UUID         NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  total_invested           NUMERIC(14,2) NOT NULL DEFAULT 0
+                             CONSTRAINT chk_total_invested CHECK (total_invested >= 0),
+  currency                 TEXT         NOT NULL DEFAULT 'CAD',
+  last_contribution_amount NUMERIC(14,2),
+  last_projected_total     NUMERIC(14,2),
+  last_remaining           NUMERIC(14,2),
+  last_orders              JSONB,
+  last_chart_data          JSONB,
+  last_calculated_at       TIMESTAMPTZ,
+  updated_at               TIMESTAMPTZ  NOT NULL DEFAULT now(),
   CONSTRAINT uq_portfolio_state_user UNIQUE (user_id)
 );
 
@@ -101,12 +110,12 @@ CREATE POLICY "own_state_delete" ON portfolio_state
 --    ON CONFLICT garante idempotência (re-run seguro)
 -- -------------------------------------------------------------
 
-INSERT INTO portfolio_assets (user_id, ticker, label, target_pct, is_active)
+INSERT INTO portfolio_assets (user_id, ticker, label, target_pct, current_value_cad, is_active)
 VALUES
-  ('SEU_USER_ID_AQUI', 'VFV',  'S&P 500 (CAD)',        65.00, TRUE),
-  ('SEU_USER_ID_AQUI', 'XEF',  'Internacional Dev',     15.00, TRUE),
-  ('SEU_USER_ID_AQUI', 'XEC',  'Mercados Emergentes',   10.00, TRUE),
-  ('SEU_USER_ID_AQUI', 'FBTC', 'Bitcoin ETF',           10.00, TRUE)
+  ('53733fa3-5066-4d61-bb80-9659a408bdff', 'VFV',  'S&P 500 (CAD)',        65.00, 0, TRUE),
+  ('53733fa3-5066-4d61-bb80-9659a408bdff', 'XEF',  'Internacional Dev',     15.00, 0, TRUE),
+  ('53733fa3-5066-4d61-bb80-9659a408bdff', 'XEC',  'Mercados Emergentes',   10.00, 0, TRUE),
+  ('53733fa3-5066-4d61-bb80-9659a408bdff', 'FBTC', 'Bitcoin ETF',           10.00, 0, TRUE)
 ON CONFLICT (user_id, ticker) DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -117,7 +126,7 @@ SELECT
   'portfolio_assets' AS tabela,
   COUNT(*)           AS registros
 FROM portfolio_assets
-WHERE user_id = 'SEU_USER_ID_AQUI'
+WHERE user_id = '53733fa3-5066-4d61-bb80-9659a408bdff'
 
 UNION ALL
 
@@ -125,6 +134,6 @@ SELECT
   'portfolio_state',
   COUNT(*)
 FROM portfolio_state
-WHERE user_id = 'SEU_USER_ID_AQUI';
+WHERE user_id = '53733fa3-5066-4d61-bb80-9659a408bdff';
 
 COMMIT;

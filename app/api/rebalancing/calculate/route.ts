@@ -15,27 +15,17 @@ export async function POST(req: Request) {
 
   const { contribution_amount } = parsed.data;
 
-  // Fetch state
-  const { data: stateRow, error: stateErr } = await supabase
-    .from("portfolio_state")
-    .select("total_invested")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (stateErr) return NextResponse.json({ error: stateErr.message }, { status: 500 });
-  // Supabase returns NUMERIC as string via PostgREST — coerce to number to prevent string concatenation
-  const total_invested = Number(stateRow?.total_invested ?? 0);
-
   // Fetch active assets
   const { data: assetRows, error: assetsErr } = await supabase
     .from("portfolio_assets")
-    .select("id,ticker,label,target_pct")
+    .select("id,ticker,label,target_pct,current_value_cad")
     .eq("user_id", user.id)
     .eq("is_active", true);
 
   if (assetsErr) return NextResponse.json({ error: assetsErr.message }, { status: 500 });
 
   const assets = assetRows ?? [];
+  const total_invested = assets.reduce((sum, asset) => sum + Number(asset.current_value_cad ?? 0), 0);
 
   // Validate sum(target_pct) == 100 when assets exist
   if (assets.length > 0) {
@@ -55,7 +45,7 @@ export async function POST(req: Request) {
     ticker: a.ticker,
     label: a.label,
     target_pct: Number(a.target_pct),
-    current_value: total_invested > 0 ? (total_invested * Number(a.target_pct)) / 100 : 0,
+    current_value: Number(a.current_value_cad ?? 0),
   }));
 
   const result = calculateRebalancing(total_invested, contribution_amount, portfolioAssets);
@@ -67,6 +57,27 @@ export async function POST(req: Request) {
     current: o.current_pct,
     post: o.post_pct,
   }));
+
+  const snapshotTimestamp = new Date().toISOString();
+  const { error: stateErr } = await supabase.from("portfolio_state").upsert(
+    {
+      user_id: user.id,
+      total_invested,
+      currency: "CAD",
+      last_contribution_amount: contribution_amount,
+      last_projected_total: result.projected_total,
+      last_remaining: result.remaining,
+      last_orders: result.orders,
+      last_chart_data: chart_data,
+      last_calculated_at: snapshotTimestamp,
+      updated_at: snapshotTimestamp,
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (stateErr) {
+    return NextResponse.json({ error: stateErr.message }, { status: 500 });
+  }
 
   return NextResponse.json({ ...result, chart_data });
 }

@@ -76,6 +76,7 @@ export const portfolioAssetSchema = z.object({
   ticker: z.string().trim().min(1).max(10),
   label: z.string().trim().max(60).optional(),
   target_pct: z.number().min(0).max(100),
+  current_value_cad: z.number().min(0).default(0),
   is_active: z.boolean().default(true),
 });
 

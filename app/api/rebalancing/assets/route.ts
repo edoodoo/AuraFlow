@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("portfolio_assets")
-    .select("id,ticker,label,target_pct,is_active,created_at")
+    .select("id,ticker,label,target_pct,current_value_cad,is_active,created_at,updated_at")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .order("created_at", { ascending: true });
@@ -35,9 +35,11 @@ export async function POST(req: Request) {
       ticker: parsed.data.ticker.toUpperCase(),
       label: parsed.data.label ?? null,
       target_pct: parsed.data.target_pct,
+        current_value_cad: parsed.data.current_value_cad,
       is_active: parsed.data.is_active,
+        updated_at: new Date().toISOString(),
     })
-    .select("id,ticker,label,target_pct,is_active,created_at")
+    .select("id,ticker,label,target_pct,current_value_cad,is_active,created_at,updated_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

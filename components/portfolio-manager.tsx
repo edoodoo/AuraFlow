@@ -8,6 +8,7 @@ type Asset = {
   ticker: string;
   label: string | null;
   target_pct: number;
+  current_value_cad: number;
   is_active: boolean;
 };
 
@@ -26,14 +27,17 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
   const [newTicker, setNewTicker] = useState("");
   const [newLabel, setNewLabel] = useState("");
   const [newPct, setNewPct] = useState("");
+  const [newCurrentValue, setNewCurrentValue] = useState("");
   const [showForm, setShowForm] = useState(false);
 
   // Edit state
   const [editId, setEditId] = useState<string | null>(null);
   const [editPct, setEditPct] = useState("");
+  const [editCurrentValue, setEditCurrentValue] = useState("");
 
   const sumPct = assets.reduce((s, a) => s + Number(a.target_pct), 0);
   const isValid = Math.abs(sumPct - 100) < 0.01;
+  const totalCurrentValue = assets.reduce((s, a) => s + Number(a.current_value_cad), 0);
 
   const load = async () => {
     setLoading(true);
@@ -55,8 +59,13 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
   const handleAdd = async () => {
     if (!newTicker.trim() || !newPct) return;
     const pct = parseFloat(newPct);
+    const currentValue = parseFloat(newCurrentValue || "0");
     if (isNaN(pct) || pct < 0 || pct > 100) {
       setError("Percentual inválido.");
+      return;
+    }
+    if (isNaN(currentValue) || currentValue < 0) {
+      setError("Valor atual inválido.");
       return;
     }
     setSaving(true);
@@ -65,7 +74,12 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
       const res = await fetch("/api/rebalancing/assets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticker: newTicker.trim().toUpperCase(), label: newLabel.trim() || undefined, target_pct: pct }),
+        body: JSON.stringify({
+          ticker: newTicker.trim().toUpperCase(),
+          label: newLabel.trim() || undefined,
+          target_pct: pct,
+          current_value_cad: currentValue,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao adicionar.");
@@ -73,6 +87,7 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
       setNewTicker("");
       setNewLabel("");
       setNewPct("");
+      setNewCurrentValue("");
       setShowForm(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao adicionar ativo.");
@@ -83,8 +98,13 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
 
   const handleSaveEdit = async (id: string) => {
     const pct = parseFloat(editPct);
+    const currentValue = parseFloat(editCurrentValue);
     if (isNaN(pct) || pct < 0 || pct > 100) {
       setError("Percentual inválido.");
+      return;
+    }
+    if (isNaN(currentValue) || currentValue < 0) {
+      setError("Valor atual inválido.");
       return;
     }
     setSaving(true);
@@ -93,11 +113,17 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
       const res = await fetch(`/api/rebalancing/assets/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target_pct: pct }),
+        body: JSON.stringify({ target_pct: pct, current_value_cad: currentValue }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao salvar.");
-      setAssets((prev) => prev.map((a) => (a.id === id ? { ...a, target_pct: data.asset.target_pct } : a)));
+      setAssets((prev) =>
+        prev.map((a) =>
+          a.id === id
+            ? { ...a, target_pct: data.asset.target_pct, current_value_cad: data.asset.current_value_cad }
+            : a,
+        ),
+      );
       setEditId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar.");
@@ -152,6 +178,7 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
           Soma dos alvos: <span className="font-bold">{sumPct.toFixed(1)}%</span>
           {!isValid && " — deve ser exatamente 100%"}
           {isValid && " ✓"}
+          <div className="mt-1 text-xs text-slate-400">Carteira atual total: {totalCurrentValue.toFixed(2)} CAD</div>
         </div>
 
         {/* Asset list */}
@@ -187,6 +214,15 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
                       autoFocus
                     />
                     <span className="text-slate-400">%</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editCurrentValue}
+                      onChange={(e) => setEditCurrentValue(e.target.value)}
+                      className="w-28 rounded-xl border border-white/10 bg-white/10 px-2 py-1 text-right text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    />
+                    <span className="text-slate-400">CAD</span>
                     <button
                       onClick={() => handleSaveEdit(a.id)}
                       disabled={saving}
@@ -206,8 +242,15 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
                     <span className="min-w-[3rem] text-right text-sm font-semibold text-sky-400">
                       {Number(a.target_pct).toFixed(1)}%
                     </span>
+                    <span className="min-w-[5.5rem] text-right text-xs text-slate-300">
+                      {Number(a.current_value_cad).toFixed(2)} CAD
+                    </span>
                     <button
-                      onClick={() => { setEditId(a.id); setEditPct(String(a.target_pct)); }}
+                      onClick={() => {
+                        setEditId(a.id);
+                        setEditPct(String(a.target_pct));
+                        setEditCurrentValue(String(a.current_value_cad));
+                      }}
                       className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
                     >
                       <Pencil size={13} />
@@ -229,7 +272,7 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
         {/* Add new asset form */}
         {showForm ? (
           <div className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="mb-1 block text-xs text-slate-400">Ticker</label>
                 <input
@@ -254,6 +297,18 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
                   className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-xs text-slate-400">Valor atual (CAD)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="ex: 1056.54"
+                  value={newCurrentValue}
+                  onChange={(e) => setNewCurrentValue(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                />
+              </div>
             </div>
             <div>
               <label className="mb-1 block text-xs text-slate-400">Label (opcional)</label>
@@ -275,7 +330,7 @@ export function PortfolioManager({ onClose, onSaved }: Props) {
                 Adicionar
               </button>
               <button
-                onClick={() => { setShowForm(false); setNewTicker(""); setNewLabel(""); setNewPct(""); }}
+                onClick={() => { setShowForm(false); setNewTicker(""); setNewLabel(""); setNewPct(""); setNewCurrentValue(""); }}
                 className="rounded-xl px-4 py-2 text-sm text-slate-400 hover:text-white"
               >
                 Cancelar

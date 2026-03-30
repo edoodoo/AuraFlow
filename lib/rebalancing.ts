@@ -55,7 +55,7 @@ export function calculateRebalancing(
     .map((r) => {
       const purchase_amount = round2(r.purchase * scale);
       const post_value = r.asset.current_value + purchase_amount;
-      const current_pct = projected_total > 0 ? round2((r.asset.current_value / projected_total) * 100) : 0;
+      const current_pct = total_invested > 0 ? round2((r.asset.current_value / total_invested) * 100) : 0;
       const post_pct = projected_total > 0 ? round2((post_value / projected_total) * 100) : 0;
       const gap_fill_pct = r.gap > 0 ? round2((purchase_amount / r.gap) * 100) : 0;
 

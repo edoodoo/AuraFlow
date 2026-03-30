@@ -17,14 +17,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (parsed.data.ticker !== undefined) update.ticker = parsed.data.ticker.toUpperCase();
   if (parsed.data.label !== undefined) update.label = parsed.data.label;
   if (parsed.data.target_pct !== undefined) update.target_pct = parsed.data.target_pct;
+  if (parsed.data.current_value_cad !== undefined) update.current_value_cad = parsed.data.current_value_cad;
   if (parsed.data.is_active !== undefined) update.is_active = parsed.data.is_active;
+  update.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("portfolio_assets")
     .update(update)
     .eq("id", id)
     .eq("user_id", user.id)
-    .select("id,ticker,label,target_pct,is_active")
+    .select("id,ticker,label,target_pct,current_value_cad,is_active,updated_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

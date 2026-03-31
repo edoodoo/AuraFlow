@@ -46,7 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="dark min-h-screen pb-24 text-slate-100 md:pb-10">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1760px] items-center justify-between gap-4 px-4 py-4 sm:px-6 xl:px-8 2xl:px-10">
           <BrandMark dark />
           <div className="hidden items-center gap-3 md:flex">
             <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
@@ -67,7 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-4 py-5 sm:px-6 md:grid-cols-[280px_minmax(0,1fr)] md:gap-6 md:py-8">
+      <div className="mx-auto grid w-full max-w-[1760px] grid-cols-1 gap-5 px-4 py-5 sm:px-6 md:grid-cols-[280px_minmax(0,1fr)] md:gap-6 md:py-8 xl:grid-cols-[300px_minmax(0,1fr)] xl:px-8 2xl:gap-8 2xl:px-10">
         <aside className="glass-surface hidden h-fit overflow-hidden p-4 md:block">
           <div className="mb-6 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
             <div className="text-xs uppercase tracking-[0.22em] text-slate-400">Visão atual</div>

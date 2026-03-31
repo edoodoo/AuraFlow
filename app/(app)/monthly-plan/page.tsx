@@ -112,6 +112,8 @@ const formatCurrencyOrFallback = (value: number | null | undefined, fallback: st
 const fieldErrorClass = "border-rose-400/70 ring-1 ring-rose-400/40 focus:border-rose-300 focus:ring-rose-300/40";
 const compactMonthlyFieldClass = "min-h-11 px-3 py-2 text-[13px]";
 const compactMonthlyInlineFieldClass = "min-h-10 px-3 py-2 text-[13px]";
+const compactMonthlyAmountFieldClass = `${compactMonthlyFieldClass} min-w-0 text-right tabular-nums xl:min-w-[11.5rem]`;
+const highlightedMonthlyAmountFieldClass = "w-full max-w-none text-right tabular-nums md:min-w-[18rem] xl:min-w-[22rem]";
 const compactMonthlySecondaryButtonClass = "inline-flex items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium";
 
 function getCategoryName(category: PlanItem["category"]) {
@@ -645,7 +647,7 @@ export default function MonthlyPlanPage() {
               Aqui ficam os itens do mês, o vínculo do cônjuge, as categorias, as seções especiais e a exportação dos fixos.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:w-[560px]">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_140px_auto] xl:w-[640px]">
             <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
               {monthLabels.map((label, index) => (
                 <option key={label} value={index + 1}>
@@ -700,10 +702,11 @@ export default function MonthlyPlanPage() {
             <p className="mt-2 text-sm text-slate-400">
               Informe a soma de salarios e extras do casal para melhorar a leitura do mensal e do dashboard.
             </p>
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.2fr)_auto] xl:grid-cols-[minmax(0,1.35fr)_auto]">
               <input
                 type="number"
                 step="0.01"
+                inputMode="decimal"
                 placeholder="Renda total do casal no mês"
                 value={incomeValue}
                 onChange={(e) => {
@@ -711,7 +714,7 @@ export default function MonthlyPlanPage() {
                   setIncomeError(null);
                 }}
                 disabled={!household || incomeSaving}
-                className={incomeError ? fieldErrorClass : undefined}
+                className={[highlightedMonthlyAmountFieldClass, incomeError ? fieldErrorClass : undefined].filter(Boolean).join(" ")}
               />
               <button type="button" className="primary-button min-w-[180px]" onClick={() => void saveIncome()} disabled={!household || incomeSaving}>
                 {summary?.monthly_income ? "Atualizar renda" : "Salvar renda"}
@@ -817,7 +820,7 @@ export default function MonthlyPlanPage() {
             heading="h3"
           >
             <div className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_1.2fr_0.68fr_0.8fr_1.12fr]">
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(12rem,0.95fr)_minmax(10.5rem,0.8fr)_minmax(0,1.1fr)]">
                 <input
                   data-item-scope={`new-${section.key}`}
                   data-field="title"
@@ -842,10 +845,11 @@ export default function MonthlyPlanPage() {
                   data-field="expected_amount"
                   type="number"
                   step="0.01"
+                  inputMode="decimal"
                   placeholder="Valor previsto"
                   value={newItems[section.key].expected_amount}
                   onChange={(e) => updateNewItem(section.key, { expected_amount: e.target.value })}
-                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(newItemErrors[section.key].expected_amount))].filter(Boolean).join(" ")}
+                  className={[compactMonthlyAmountFieldClass, getDraftInputClass(Boolean(newItemErrors[section.key].expected_amount))].filter(Boolean).join(" ")}
                 />
                 <input
                   data-item-scope={`new-${section.key}`}
@@ -996,7 +1000,7 @@ export default function MonthlyPlanPage() {
                             className="overflow-hidden"
                           >
                             <div className="mt-[0.7rem] border-t border-white/[0.06] pt-[0.7rem]">
-                              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.1fr_1.2fr_0.7fr_0.85fr_1.1fr_auto]">
+                              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(12rem,0.95fr)_minmax(10.5rem,0.82fr)_minmax(0,1.05fr)_auto]">
                                 <input
                                   data-item-scope={`item-${item.id}`}
                                   data-field="title"
@@ -1020,9 +1024,10 @@ export default function MonthlyPlanPage() {
                                   data-field="expected_amount"
                                   type="number"
                                   step="0.01"
+                                  inputMode="decimal"
                                   value={draft.expected_amount}
                                   onChange={(e) => updateDraft(item.id, { expected_amount: e.target.value })}
-                                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.expected_amount))].filter(Boolean).join(" ")}
+                                  className={[compactMonthlyAmountFieldClass, getDraftInputClass(Boolean(currentItemErrors.expected_amount))].filter(Boolean).join(" ")}
                                 />
                                 <input
                                   data-item-scope={`item-${item.id}`}

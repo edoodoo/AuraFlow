@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpDown, Camera, EllipsisVertical, Link2, Pencil, PlusCircle, ReceiptText, Save, Trash2, Wallet, X } from "lucide-react";
 import { CategoryCombobox } from "@/components/category-combobox";
+import type { LinkedPaymentLine, TransactionFeedEntry, TransactionListRow } from "@/lib/transactions-list";
 
 type Category = { id: string; name: string };
 type PlanItem = {
@@ -17,18 +18,33 @@ type PlanItem = {
   due_date: string | null;
   category: { name: string } | { name: string }[] | null;
 };
-type Transaction = {
-  id: string;
-  category_id: string | null;
-  amount: number;
-  description: string | null;
-  transaction_date: string;
-  receipt_url: string | null;
-  transaction_kind: "avulso" | "linked_plan_item";
-  monthly_plan_item_id: string | null;
-  plan_item: { title: string; section: string } | { title: string; section: string }[] | null;
-  category: { name: string } | null;
-};
+type Transaction = TransactionListRow;
+
+function categoryLabel(category: Transaction["category"]) {
+  if (!category) return "Sem categoria";
+  return Array.isArray(category) ? category[0]?.name ?? "Sem categoria" : category.name;
+}
+
+/** Rebuild a list row for PUT/DELETE flows when editing a line inside a linked_aggregate group. */
+function paymentLineToTransaction(
+  line: LinkedPaymentLine,
+  aggregate: Extract<TransactionFeedEntry, { kind: "linked_aggregate" }>,
+): Transaction {
+  return {
+    id: line.id,
+    user_id: line.user_id,
+    category_id: line.category_id,
+    amount: line.amount,
+    description: line.description,
+    transaction_date: line.transaction_date,
+    receipt_url: line.receipt_url,
+    created_at: line.created_at,
+    transaction_kind: "linked_plan_item",
+    monthly_plan_item_id: aggregate.monthly_plan_item_id,
+    plan_item: aggregate.plan_item,
+    category: line.category,
+  };
+}
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
@@ -54,7 +70,7 @@ type Notice = {
 export default function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [feed, setFeed] = useState<TransactionFeedEntry[]>([]);
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [form, setForm] = useState({
     transaction_kind: "avulso" as "avulso" | "linked_plan_item",
@@ -101,7 +117,7 @@ export default function TransactionsPage() {
       if (!cRes.ok || !tRes.ok || !planRes.ok) throw new Error("Falha ao carregar.");
       const [cData, tData, planData] = await Promise.all([cRes.json(), tRes.json(), planRes.json()]);
       setCategories(cData.categories ?? []);
-      setTransactions(tData.transactions ?? []);
+      setFeed(tData.entries ?? []);
       setPlanItems(planData.items ?? []);
       if (!form.category_id && cData.categories?.length) {
         setForm((prev) => ({ ...prev, category_id: cData.categories[0].id }));
@@ -397,7 +413,7 @@ export default function TransactionsPage() {
                 {sortLabel}
               </button>
               <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
-                {transactions.length} itens
+                {feed.length} itens
               </span>
             </div>
           </div>
@@ -416,7 +432,296 @@ export default function TransactionsPage() {
           )}
           <AnimatePresence>
             <div className="space-y-3">
-              {transactions.map((t) => {
+              {feed.map((entry) => {
+                if (entry.kind === "linked_aggregate") {
+                  const linkedPlanItem = planItemById.get(entry.monthly_plan_item_id) ?? null;
+                  const isPartialLinkedPayment = linkedPlanItem?.status === "partial";
+                  const totalPaid = entry.payments.reduce((sum, p) => sum + p.amount, 0);
+                  const planTitle = entry.plan_item
+                    ? Array.isArray(entry.plan_item)
+                      ? entry.plan_item[0]?.title
+                      : entry.plan_item.title
+                    : "Item do mensal";
+
+                  return (
+                    <motion.div
+                      key={`linked-agg-${entry.monthly_plan_item_id}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={[
+                        "relative rounded-[1.6rem] border p-4 text-sm",
+                        isPartialLinkedPayment ? "border-amber-400/40 bg-amber-400/10" : "border-white/10 bg-white/5",
+                      ].join(" ")}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`mt-1 rounded-2xl p-2 ${isPartialLinkedPayment ? "bg-amber-400/15 text-amber-200" : "bg-cyan-400/10 text-cyan-300"}`}
+                          >
+                            <Link2 size={16} />
+                          </span>
+                          <div>
+                            <div className="font-medium text-white">{planTitle}</div>
+                            <p className="mt-1 text-slate-400">Pagamentos do lar (por data)</p>
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                              <span
+                                className={
+                                  isPartialLinkedPayment
+                                    ? "rounded-full bg-amber-400/15 px-2 py-1 text-amber-100"
+                                    : "rounded-full bg-cyan-400/10 px-2 py-1 text-cyan-200"
+                                }
+                              >
+                                Ligado ao mensal · {entry.payments.length} pagamento{entry.payments.length === 1 ? "" : "s"}
+                              </span>
+                              {isPartialLinkedPayment && (
+                                <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-2 py-1 font-medium text-amber-100">
+                                  Pagamento parcial
+                                </span>
+                              )}
+                            </div>
+                            {isPartialLinkedPayment && linkedPlanItem && (
+                              <div className="mt-3 rounded-2xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs text-amber-50">
+                                <div className="font-medium text-amber-100">Valor pendente</div>
+                                <div className="mt-1">{formatCurrency(linkedPlanItem.remaining_amount)}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-base font-semibold text-white">{formatCurrency(totalPaid)}</span>
+                      </div>
+
+                      <ul className="mt-4 space-y-2 border-t border-white/10 pt-3">
+                        {entry.payments.map((payment) => {
+                          const t = paymentLineToTransaction(payment, entry);
+                          return (
+                            <li key={payment.id} className="rounded-2xl border border-white/10 bg-slate-950/35 p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <div className="text-xs text-slate-500">{payment.transaction_date}</div>
+                                  <div className="mt-1 font-medium text-white">{categoryLabel(payment.category)}</div>
+                                  <div className="mt-0.5 text-xs text-slate-400">{payment.payer_display_name}</div>
+                                  {payment.description ? <p className="mt-1 text-xs text-slate-500">{payment.description}</p> : null}
+                                </div>
+                                <div className="flex items-start gap-2">
+                                  <span className="text-sm font-semibold text-white">{formatCurrency(payment.amount)}</span>
+                                  <div className="relative">
+                                    <button
+                                      type="button"
+                                      aria-label="Abrir ações do lançamento"
+                                      onClick={() => {
+                                        setActiveMenuId((prev) => (prev === payment.id ? null : payment.id));
+                                        setPendingDeleteId(null);
+                                      }}
+                                      className="rounded-full border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-white/10 hover:text-white"
+                                    >
+                                      <EllipsisVertical size={16} />
+                                    </button>
+                                    {activeMenuId === payment.id && (
+                                      <div className="absolute right-0 top-11 z-10 w-44 rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl">
+                                        <button
+                                          type="button"
+                                          onClick={() => startEditing(t)}
+                                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10"
+                                        >
+                                          <Pencil size={14} />
+                                          Editar
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setPendingDeleteId(payment.id);
+                                            setActiveMenuId(null);
+                                          }}
+                                          className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-200 transition hover:bg-rose-500/10"
+                                        >
+                                          <Trash2 size={14} />
+                                          Excluir
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {editingId === payment.id && editingDraft ? (
+                                <div className="mt-3 rounded-[1.4rem] border border-white/10 bg-slate-950/40 p-4">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                      <p className="text-sm font-medium text-white">Editar lançamento</p>
+                                      <p className="mt-1 text-xs leading-5 text-slate-400">
+                                        Você pode ajustar categoria, valor, data e descrição sem sair desta tela.
+                                      </p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={cancelEditing}
+                                      className="rounded-full border border-white/10 p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+
+                                  <p className="mt-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-xs text-cyan-100">
+                                    Este lançamento continua ligado ao mensal. O vínculo e o recibo permanecem como estão nesta edição.
+                                  </p>
+
+                                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-medium text-slate-200">Categoria</label>
+                                      <CategoryCombobox
+                                        value={editingDraft.category_id}
+                                        onChange={(nextValue) => {
+                                          setEditingDraft((prev) => (prev ? { ...prev, category_id: nextValue } : prev));
+                                          setEditingError(null);
+                                        }}
+                                        options={categoryOptions}
+                                        placeholder="Selecione a categoria"
+                                        disabled={savingEditId === payment.id}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-medium text-slate-200">Valor</label>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        value={editingDraft.amount}
+                                        onChange={(e) => {
+                                          setEditingDraft((prev) => (prev ? { ...prev, amount: e.target.value } : prev));
+                                          setEditingError(null);
+                                        }}
+                                        disabled={savingEditId === payment.id}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-medium text-slate-200">Data</label>
+                                      <input
+                                        type="date"
+                                        value={editingDraft.transaction_date}
+                                        onChange={(e) => {
+                                          setEditingDraft((prev) => (prev ? { ...prev, transaction_date: e.target.value } : prev));
+                                          setEditingError(null);
+                                        }}
+                                        disabled={savingEditId === payment.id}
+                                      />
+                                    </div>
+                                    <div className="space-y-2 md:col-span-2">
+                                      <label className="text-sm font-medium text-slate-200">Descrição</label>
+                                      <input
+                                        type="text"
+                                        value={editingDraft.description}
+                                        onChange={(e) => {
+                                          setEditingDraft((prev) => (prev ? { ...prev, description: e.target.value } : prev));
+                                          setEditingError(null);
+                                        }}
+                                        disabled={savingEditId === payment.id}
+                                        placeholder="Descreva o lançamento"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {editingError && (
+                                    <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{editingError}</p>
+                                  )}
+
+                                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                                    <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+                                      <span className="rounded-full bg-white/5 px-3 py-2">Tipo: Ligado ao mensal</span>
+                                      {t.receipt_url && (
+                                        <a
+                                          className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-2 text-cyan-300 hover:text-cyan-200"
+                                          href={t.receipt_url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          <ReceiptText size={14} />
+                                          Ver recibo atual
+                                        </a>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={cancelEditing}
+                                        disabled={savingEditId === payment.id}
+                                        className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10"
+                                      >
+                                        <X size={14} />
+                                        Cancelar
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => void saveEdit(t)}
+                                        disabled={savingEditId === payment.id}
+                                        className="primary-button"
+                                      >
+                                        <Save size={14} />
+                                        {savingEditId === payment.id ? "Salvando..." : "Salvar"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-400">
+                                  {payment.receipt_url ? (
+                                    <a
+                                      className="inline-flex items-center gap-1 font-medium text-cyan-300 hover:text-cyan-200"
+                                      href={payment.receipt_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                    >
+                                      <ReceiptText size={14} />
+                                      Ver recibo
+                                    </a>
+                                  ) : (
+                                    <span>Sem recibo</span>
+                                  )}
+                                </div>
+                              )}
+
+                              {pendingDeleteId === payment.id && (
+                                <div className="mt-3 rounded-[1.4rem] border border-rose-400/20 bg-rose-500/10 p-4">
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="text-sm text-rose-100">
+                                      <p className="font-medium text-rose-50">Excluir este lançamento?</p>
+                                      <p className="mt-1 text-rose-200/90">A exclusão atualiza o histórico e pode alterar o status do item vinculado no mensal.</p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => setPendingDeleteId(null)}
+                                        disabled={removingId === payment.id}
+                                        className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10"
+                                      >
+                                        Cancelar
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => void removeTransaction(payment.id)}
+                                        disabled={removingId === payment.id}
+                                        className="secondary-button border-rose-400/20 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20"
+                                      >
+                                        {removingId === payment.id ? (
+                                          "Excluindo..."
+                                        ) : (
+                                          <>
+                                            <Trash2 size={14} />
+                                            Excluir agora
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </motion.div>
+                  );
+                }
+
+                const t = entry.transaction;
                 const linkedPlanItem = t.monthly_plan_item_id ? planItemById.get(t.monthly_plan_item_id) ?? null : null;
                 const isPartialLinkedPayment = linkedPlanItem?.status === "partial";
 
@@ -436,7 +741,7 @@ export default function TransactionsPage() {
                           <Wallet size={16} />
                         </span>
                         <div>
-                          <div className="font-medium text-white">{t.category?.name ?? "Sem categoria"}</div>
+                          <div className="font-medium text-white">{categoryLabel(t.category)}</div>
                           <p className={isPartialLinkedPayment ? "mt-1 text-amber-50/85" : "mt-1 text-slate-400"}>{t.description || "Sem descrição informada"}</p>
                           <div className="mt-2 flex flex-wrap gap-2 text-xs">
                             <span className={isPartialLinkedPayment ? "rounded-full bg-amber-400/15 px-2 py-1 text-amber-100" : "rounded-full bg-white/5 px-2 py-1 text-slate-300"}>

@@ -4,14 +4,38 @@ import { ENV } from "@/lib/env";
 import { getHouseholdContext } from "@/lib/household";
 import { getLinkedPaymentState, refreshMonthlyPlanItemStatus } from "@/lib/monthly-plan";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import {
+  buildTransactionFeedEntries,
+  makePayerLabelResolver,
+  type TransactionListRow,
+} from "@/lib/transactions-list";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
+
+const TX_LIST_SELECT =
+  "id,user_id,category_id,amount,description,transaction_date,receipt_url,created_at,transaction_kind,monthly_plan_item_id,category:categories(name),plan_item:monthly_plan_items(title,section)";
+
+/** Optional list filters shared across feed queries (category / date range). */
+function addOptionalListFilters(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase filter builder chain
+  q: any,
+  categoryId: string | null,
+  dateFrom: string | null,
+  dateTo: string | null,
+) {
+  let query = q;
+  if (categoryId) query = query.eq("category_id", categoryId);
+  if (dateFrom) query = query.gte("transaction_date", dateFrom);
+  if (dateTo) query = query.lte("transaction_date", dateTo);
+  return query;
+}
 
 export async function GET(req: Request) {
   const { user, response } = await requireUserForRoute();
   if (!user) return response;
   const supabase = getSupabaseAdminClient();
+  const context = await getHouseholdContext(user);
   const { searchParams } = new URL(req.url);
 
   const categoryId = searchParams.get("category_id");
@@ -20,24 +44,93 @@ export async function GET(req: Request) {
   const limit = Number(searchParams.get("limit") ?? 50);
   const sortDirection = searchParams.get("sort") === "asc" ? "asc" : "desc";
   const isAscending = sortDirection === "asc";
+  const listLimit = Math.min(200, Math.max(1, limit));
+  /** Fetch a wide window per slice so grouping linked rows still yields enough distinct feed cards after merge. */
+  const fetchCap = Math.min(500, Math.max(80, listLimit * 25));
 
-  let query = supabase
+  const getPayerLabel = makePayerLabelResolver(context);
+
+  let avulsoQuery = supabase
     .from("transactions")
-    .select(
-      "id,category_id,amount,description,transaction_date,receipt_url,transaction_kind,monthly_plan_item_id,category:categories(name),plan_item:monthly_plan_items(title,section)",
-    )
+    .select(TX_LIST_SELECT)
     .eq("user_id", user.id)
+    .eq("transaction_kind", "avulso")
     .order("transaction_date", { ascending: isAscending })
     .order("created_at", { ascending: isAscending })
-    .limit(Math.min(200, Math.max(1, limit)));
+    .limit(fetchCap);
+  avulsoQuery = addOptionalListFilters(avulsoQuery, categoryId, dateFrom, dateTo);
 
-  if (categoryId) query = query.eq("category_id", categoryId);
-  if (dateFrom) query = query.gte("transaction_date", dateFrom);
-  if (dateTo) query = query.lte("transaction_date", dateTo);
+  let looseLinkedQuery = supabase
+    .from("transactions")
+    .select(TX_LIST_SELECT)
+    .eq("user_id", user.id)
+    .eq("transaction_kind", "linked_plan_item")
+    .is("monthly_plan_item_id", null)
+    .order("transaction_date", { ascending: isAscending })
+    .order("created_at", { ascending: isAscending })
+    .limit(fetchCap);
+  looseLinkedQuery = addOptionalListFilters(looseLinkedQuery, categoryId, dateFrom, dateTo);
 
-  const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ transactions: data ?? [] });
+  let linkedQuery = supabase
+    .from("transactions")
+    .select(TX_LIST_SELECT)
+    .eq("transaction_kind", "linked_plan_item")
+    .not("monthly_plan_item_id", "is", null)
+    .order("transaction_date", { ascending: isAscending })
+    .order("created_at", { ascending: isAscending })
+    .limit(fetchCap);
+
+  if (context.household) {
+    linkedQuery = linkedQuery.eq("household_id", context.household.id);
+  } else {
+    linkedQuery = linkedQuery.eq("user_id", user.id);
+  }
+  linkedQuery = addOptionalListFilters(linkedQuery, categoryId, dateFrom, dateTo);
+
+  let linkedLegacyQuery: typeof avulsoQuery | null = null;
+  if (context.household) {
+    linkedLegacyQuery = supabase
+      .from("transactions")
+      .select(TX_LIST_SELECT)
+      .eq("transaction_kind", "linked_plan_item")
+      .not("monthly_plan_item_id", "is", null)
+      .eq("user_id", user.id)
+      .is("household_id", null)
+      .order("transaction_date", { ascending: isAscending })
+      .order("created_at", { ascending: isAscending })
+      .limit(fetchCap);
+    linkedLegacyQuery = addOptionalListFilters(linkedLegacyQuery, categoryId, dateFrom, dateTo);
+  }
+
+  const [avulsoRes, looseRes, linkedRes, legacyRes] = await Promise.all([
+    avulsoQuery,
+    looseLinkedQuery,
+    linkedQuery,
+    linkedLegacyQuery ?? Promise.resolve({ data: [] as TransactionListRow[], error: null }),
+  ]);
+
+  for (const r of [avulsoRes, looseRes, linkedRes, legacyRes]) {
+    if (r.error) return NextResponse.json({ error: r.error.message }, { status: 400 });
+  }
+
+  const avulsoRows = (avulsoRes.data ?? []) as unknown as TransactionListRow[];
+  const looseLinkedRows = (looseRes.data ?? []) as unknown as TransactionListRow[];
+  let linkedRows = (linkedRes.data ?? []) as unknown as TransactionListRow[];
+  if (context.household) {
+    const legacy = (legacyRes.data ?? []) as unknown as TransactionListRow[];
+    const seen = new Map<string, TransactionListRow>();
+    for (const row of linkedRows) seen.set(row.id, row);
+    for (const row of legacy) seen.set(row.id, row);
+    linkedRows = [...seen.values()];
+  }
+
+  const entries = buildTransactionFeedEntries(avulsoRows, linkedRows, looseLinkedRows, {
+    limit: listLimit,
+    sort: sortDirection,
+    getPayerLabel,
+  });
+
+  return NextResponse.json({ entries });
 }
 
 export async function POST(req: Request) {

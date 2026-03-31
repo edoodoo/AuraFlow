@@ -1,11 +1,12 @@
----
-description: Auto commit and push completed work by default
+description: Auto commit and push after passing tests
 alwaysApply: true
 ---
 
 # Commit And Push Preference
 
-- When a task is complete and no further manual user action is required, create a git commit and push it by default.
+- When I finish a task and all requested or relevant automated checks pass without errors, create a git commit and push it by default.
+- Treat this as the default workflow, not an optional suggestion.
 - Follow the repository's existing commit message style.
+- Stage and commit only the files related to the task I completed.
 - Still respect explicit user instructions to avoid committing or pushing.
-- Do not auto-push if the work is incomplete, depends on pending manual validation, or would be unsafe.
+- Do not auto-commit or auto-push if tests/checks are still failing, the work depends on pending manual validation, or pushing would be unsafe.

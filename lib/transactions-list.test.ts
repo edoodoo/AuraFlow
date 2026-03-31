@@ -4,6 +4,7 @@ import {
   buildTransactionFeedEntries,
   groupLinkedTransactionsByPlanItem,
   makePayerLabelResolver,
+  paginateTransactionFeedEntries,
   type TransactionListRow,
 } from "./transactions-list";
 
@@ -153,7 +154,6 @@ describe("buildTransactionFeedEntries", () => {
       }),
     ];
     const entries = buildTransactionFeedEntries(avulso, linked, [], {
-      limit: 10,
       sort: "desc",
       getPayerLabel: label,
     });
@@ -184,7 +184,6 @@ describe("buildTransactionFeedEntries", () => {
       }),
     ];
     const entries = buildTransactionFeedEntries([], linked, [], {
-      limit: 10,
       sort: "desc",
       getPayerLabel: label,
     });
@@ -206,7 +205,6 @@ describe("buildTransactionFeedEntries", () => {
       }),
     ];
     const entries = buildTransactionFeedEntries([], [], loose, {
-      limit: 10,
       sort: "desc",
       getPayerLabel: label,
     });
@@ -232,7 +230,6 @@ describe("buildTransactionFeedEntries", () => {
       }),
     ];
     const entries = buildTransactionFeedEntries([], agg, [], {
-      limit: 10,
       sort: "desc",
       getPayerLabel: label,
     });
@@ -261,7 +258,6 @@ describe("buildTransactionFeedEntries", () => {
       }),
     ];
     const entries = buildTransactionFeedEntries([], agg, [], {
-      limit: 10,
       sort: "asc",
       getPayerLabel: label,
     });
@@ -272,7 +268,7 @@ describe("buildTransactionFeedEntries", () => {
     expect(aggIds[1]).toBe("mpi-new");
   });
 
-  it("respects limit", () => {
+  it("returns the full sorted feed before pagination", () => {
     const avulso = [baseRow({ id: "v1", transaction_kind: "avulso", transaction_date: "2025-01-01" })];
     const linked = [
       baseRow({
@@ -283,11 +279,63 @@ describe("buildTransactionFeedEntries", () => {
       }),
     ];
     const entries = buildTransactionFeedEntries(avulso, linked, [], {
-      limit: 1,
       sort: "desc",
       getPayerLabel: label,
     });
-    expect(entries).toHaveLength(1);
+    expect(entries).toHaveLength(2);
+  });
+});
+
+describe("paginateTransactionFeedEntries", () => {
+  const label = (uid: string) => uid;
+
+  it("paginates after grouping so linked payments stay in one card", () => {
+    const entries = buildTransactionFeedEntries(
+      [baseRow({ id: "av-1", transaction_kind: "avulso", transaction_date: "2025-06-01" })],
+      [
+        baseRow({
+          id: "lk-1",
+          transaction_kind: "linked_plan_item",
+          monthly_plan_item_id: "mpi-1",
+          transaction_date: "2025-06-03",
+        }),
+        baseRow({
+          id: "lk-2",
+          transaction_kind: "linked_plan_item",
+          monthly_plan_item_id: "mpi-1",
+          transaction_date: "2025-06-02",
+        }),
+      ],
+      [baseRow({ id: "loose-1", transaction_kind: "linked_plan_item", monthly_plan_item_id: null, transaction_date: "2025-06-04" })],
+      {
+        sort: "desc",
+        getPayerLabel: label,
+      },
+    );
+
+    const page = paginateTransactionFeedEntries(entries, { page: 1, limit: 2 });
+    expect(page.total).toBe(3);
+    expect(page.total_pages).toBe(2);
+    expect(page.entries).toHaveLength(2);
+    const aggregate = page.entries.find((entry) => entry.kind === "linked_aggregate");
+    expect(aggregate && aggregate.kind === "linked_aggregate" && aggregate.payments.map((payment) => payment.id)).toEqual(["lk-1", "lk-2"]);
+  });
+
+  it("clamps requested pages to the available range", () => {
+    const entries = buildTransactionFeedEntries(
+      [baseRow({ id: "av-1", transaction_kind: "avulso", transaction_date: "2025-06-01" })],
+      [],
+      [],
+      {
+        sort: "desc",
+        getPayerLabel: label,
+      },
+    );
+
+    const page = paginateTransactionFeedEntries(entries, { page: 9, limit: 10 });
+    expect(page.page).toBe(1);
+    expect(page.total_pages).toBe(1);
+    expect(page.entries).toHaveLength(1);
   });
 });
 

@@ -68,9 +68,13 @@ type Notice = {
 };
 
 export default function TransactionsPage() {
+  const pageSize = 10;
   const [categories, setCategories] = useState<Category[]>([]);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
   const [feed, setFeed] = useState<TransactionFeedEntry[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalEntries, setTotalEntries] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [form, setForm] = useState({
     transaction_kind: "avulso" as "avulso" | "linked_plan_item",
@@ -104,6 +108,8 @@ export default function TransactionsPage() {
   );
   const planItemById = useMemo(() => new Map(planItems.map((item) => [item.id, item])), [planItems]);
   const sortLabel = sortDirection === "desc" ? "Mais recentes" : "Mais antigas";
+  const showingFrom = totalEntries === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const showingTo = totalEntries === 0 ? 0 : Math.min(currentPage * pageSize, totalEntries);
 
   const loadData = async () => {
     setLoading(true);
@@ -111,13 +117,16 @@ export default function TransactionsPage() {
     try {
       const [cRes, tRes, planRes] = await Promise.all([
         fetch("/api/categories", { cache: "no-store" }),
-        fetch(`/api/transactions?limit=20&sort=${sortDirection}`, { cache: "no-store" }),
+        fetch(`/api/transactions?page=${currentPage}&limit=${pageSize}&sort=${sortDirection}`, { cache: "no-store" }),
         fetch("/api/monthly-plan", { cache: "no-store" }),
       ]);
       if (!cRes.ok || !tRes.ok || !planRes.ok) throw new Error("Falha ao carregar.");
       const [cData, tData, planData] = await Promise.all([cRes.json(), tRes.json(), planRes.json()]);
       setCategories(cData.categories ?? []);
       setFeed(tData.entries ?? []);
+      setCurrentPage(tData.page ?? 1);
+      setTotalEntries(tData.total ?? 0);
+      setTotalPages(tData.total_pages ?? 1);
       setPlanItems(planData.items ?? []);
       if (!form.category_id && cData.categories?.length) {
         setForm((prev) => ({ ...prev, category_id: cData.categories[0].id }));
@@ -132,7 +141,7 @@ export default function TransactionsPage() {
   useEffect(() => {
     void loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortDirection]);
+  }, [sortDirection, currentPage]);
 
   useEffect(() => {
     if (form.transaction_kind !== "linked_plan_item" || !selectedPlanItem || selectedPlanItem.status !== "paid") return;
@@ -251,7 +260,11 @@ export default function TransactionsPage() {
     setHistoryNotice(null);
     setForm((prev) => ({ ...prev, amount: "", description: "", monthly_plan_item_id: "" }));
     setReceipt(null);
-    void loadData();
+    if (currentPage === 1) {
+      void loadData();
+    } else {
+      setCurrentPage(1);
+    }
   };
 
   return (
@@ -404,7 +417,10 @@ export default function TransactionsPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"))}
+                onClick={() => {
+                  setCurrentPage(1);
+                  setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"));
+                }}
                 className="secondary-button border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 hover:bg-white/10"
                 aria-label={`Ordenar por data: ${sortLabel}`}
                 title={`Ordenar por data: ${sortLabel}`}
@@ -413,9 +429,17 @@ export default function TransactionsPage() {
                 {sortLabel}
               </button>
               <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
-                {feed.length} itens
+                {totalEntries} itens
               </span>
             </div>
+          </div>
+          <div className="mb-4 flex flex-col gap-3 rounded-[1.4rem] border border-white/10 bg-white/5 p-3 text-xs text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Mostrando {showingFrom}-{showingTo} de {totalEntries} itens
+            </span>
+            <span>
+              Página {totalPages === 0 ? 0 : currentPage} de {totalPages}
+            </span>
           </div>
           {loading && <p className="text-sm text-slate-400">Carregando...</p>}
           {historyNotice && (
@@ -978,6 +1002,27 @@ export default function TransactionsPage() {
               })}
             </div>
           </AnimatePresence>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-slate-400">A paginação mantém os pagamentos agregados do mensal no mesmo card.</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={loading || currentPage <= 1}
+                className="secondary-button border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 hover:bg-white/10 disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={loading || currentPage >= totalPages}
+                className="secondary-button border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 hover:bg-white/10 disabled:opacity-50"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
         </div>
       </section>
     </motion.div>

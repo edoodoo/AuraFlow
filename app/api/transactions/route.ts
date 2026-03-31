@@ -6,6 +6,7 @@ import { getLinkedPaymentState, refreshMonthlyPlanItemStatus } from "@/lib/month
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import {
   buildTransactionFeedEntries,
+  paginateTransactionFeedEntries,
   makePayerLabelResolver,
   type TransactionListRow,
 } from "@/lib/transactions-list";
@@ -41,12 +42,12 @@ export async function GET(req: Request) {
   const categoryId = searchParams.get("category_id");
   const dateFrom = searchParams.get("date_from");
   const dateTo = searchParams.get("date_to");
+  const page = Number(searchParams.get("page") ?? 1);
   const limit = Number(searchParams.get("limit") ?? 50);
   const sortDirection = searchParams.get("sort") === "asc" ? "asc" : "desc";
   const isAscending = sortDirection === "asc";
+  const currentPage = Math.max(1, Number.isFinite(page) ? page : 1);
   const listLimit = Math.min(200, Math.max(1, limit));
-  /** Fetch a wide window per slice so grouping linked rows still yields enough distinct feed cards after merge. */
-  const fetchCap = Math.min(500, Math.max(80, listLimit * 25));
 
   const getPayerLabel = makePayerLabelResolver(context);
 
@@ -56,8 +57,7 @@ export async function GET(req: Request) {
     .eq("user_id", user.id)
     .eq("transaction_kind", "avulso")
     .order("transaction_date", { ascending: isAscending })
-    .order("created_at", { ascending: isAscending })
-    .limit(fetchCap);
+    .order("created_at", { ascending: isAscending });
   avulsoQuery = addOptionalListFilters(avulsoQuery, categoryId, dateFrom, dateTo);
 
   let looseLinkedQuery = supabase
@@ -67,8 +67,7 @@ export async function GET(req: Request) {
     .eq("transaction_kind", "linked_plan_item")
     .is("monthly_plan_item_id", null)
     .order("transaction_date", { ascending: isAscending })
-    .order("created_at", { ascending: isAscending })
-    .limit(fetchCap);
+    .order("created_at", { ascending: isAscending });
   looseLinkedQuery = addOptionalListFilters(looseLinkedQuery, categoryId, dateFrom, dateTo);
 
   let linkedQuery = supabase
@@ -77,8 +76,7 @@ export async function GET(req: Request) {
     .eq("transaction_kind", "linked_plan_item")
     .not("monthly_plan_item_id", "is", null)
     .order("transaction_date", { ascending: isAscending })
-    .order("created_at", { ascending: isAscending })
-    .limit(fetchCap);
+    .order("created_at", { ascending: isAscending });
 
   if (context.household) {
     linkedQuery = linkedQuery.eq("household_id", context.household.id);
@@ -97,8 +95,7 @@ export async function GET(req: Request) {
       .eq("user_id", user.id)
       .is("household_id", null)
       .order("transaction_date", { ascending: isAscending })
-      .order("created_at", { ascending: isAscending })
-      .limit(fetchCap);
+      .order("created_at", { ascending: isAscending });
     linkedLegacyQuery = addOptionalListFilters(linkedLegacyQuery, categoryId, dateFrom, dateTo);
   }
 
@@ -124,13 +121,16 @@ export async function GET(req: Request) {
     linkedRows = [...seen.values()];
   }
 
-  const entries = buildTransactionFeedEntries(avulsoRows, linkedRows, looseLinkedRows, {
-    limit: listLimit,
+  const fullFeed = buildTransactionFeedEntries(avulsoRows, linkedRows, looseLinkedRows, {
     sort: sortDirection,
     getPayerLabel,
   });
+  const pagedFeed = paginateTransactionFeedEntries(fullFeed, {
+    page: currentPage,
+    limit: listLimit,
+  });
 
-  return NextResponse.json({ entries });
+  return NextResponse.json(pagedFeed);
 }
 
 export async function POST(req: Request) {

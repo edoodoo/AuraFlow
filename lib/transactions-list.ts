@@ -40,6 +40,14 @@ export type TransactionFeedEntry =
     }
   | { kind: "linked_loose"; transaction: TransactionListRow };
 
+export type TransactionFeedPage = {
+  entries: TransactionFeedEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+};
+
 /**
  * Only rows with transaction_kind === 'linked_plan_item' AND non-null monthly_plan_item_id are grouped;
  * grouping key is strictly monthly_plan_item_id (no description/category heuristics).
@@ -101,15 +109,32 @@ function tiebreakForEntry(entry: TransactionFeedEntry, sort: "asc" | "desc"): st
   return times.reduce((a, b) => (a < b ? a : b));
 }
 
+function sortTransactionFeedEntries(entries: TransactionFeedEntry[], sort: "asc" | "desc") {
+  const mult = sort === "desc" ? -1 : 1;
+  return [...entries].sort((a, b) => {
+    const dateA = primaryDateForEntry(a, sort);
+    const dateB = primaryDateForEntry(b, sort);
+    const c = dateA.localeCompare(dateB);
+    if (c !== 0) return mult * c;
+    const tieA = tiebreakForEntry(a, sort);
+    const tieB = tiebreakForEntry(b, sort);
+    const t = tieA.localeCompare(tieB);
+    if (t !== 0) return mult * t;
+    const idA = a.kind === "linked_aggregate" ? a.monthly_plan_item_id : a.transaction.id;
+    const idB = b.kind === "linked_aggregate" ? b.monthly_plan_item_id : b.transaction.id;
+    return idA.localeCompare(idB);
+  });
+}
+
 /**
- * Merges avulso rows, grouped linked rows, and loose linked rows into a single feed ordered by
- * activity date (aggregate uses the latest/earliest payment date depending on sort).
+ * Merges avulso rows, grouped linked rows, and loose linked rows into a single sorted feed.
+ * Pagination must happen after this step so grouped payments stay in a single card.
  */
 export function buildTransactionFeedEntries(
   avulsoRows: TransactionListRow[],
   linkedRowsForGrouping: TransactionListRow[],
   looseLinkedRows: TransactionListRow[],
-  options: { limit: number; sort: "asc" | "desc"; getPayerLabel: (userId: string) => string },
+  options: { sort: "asc" | "desc"; getPayerLabel: (userId: string) => string },
 ): TransactionFeedEntry[] {
   const byPlanItem = groupLinkedTransactionsByPlanItem(linkedRowsForGrouping);
 
@@ -133,22 +158,26 @@ export function buildTransactionFeedEntries(
     });
   }
 
-  const mult = options.sort === "desc" ? -1 : 1;
-  entries.sort((a, b) => {
-    const dateA = primaryDateForEntry(a, options.sort);
-    const dateB = primaryDateForEntry(b, options.sort);
-    const c = dateA.localeCompare(dateB);
-    if (c !== 0) return mult * c;
-    const tieA = tiebreakForEntry(a, options.sort);
-    const tieB = tiebreakForEntry(b, options.sort);
-    const t = tieA.localeCompare(tieB);
-    if (t !== 0) return mult * t;
-    const idA = a.kind === "linked_aggregate" ? a.monthly_plan_item_id : a.transaction.id;
-    const idB = b.kind === "linked_aggregate" ? b.monthly_plan_item_id : b.transaction.id;
-    return idA.localeCompare(idB);
-  });
+  return sortTransactionFeedEntries(entries, options.sort);
+}
 
-  return entries.slice(0, options.limit);
+export function paginateTransactionFeedEntries(
+  entries: TransactionFeedEntry[],
+  options: { page: number; limit: number },
+): TransactionFeedPage {
+  const limit = Math.max(1, options.limit);
+  const total = entries.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const page = Math.min(Math.max(1, options.page), totalPages);
+  const start = (page - 1) * limit;
+
+  return {
+    entries: entries.slice(start, start + limit),
+    total,
+    page,
+    limit,
+    total_pages: totalPages,
+  };
 }
 
 export function makePayerLabelResolver(context: HouseholdContext): (userId: string) => string {

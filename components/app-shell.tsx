@@ -166,13 +166,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="min-w-0">{children}</main>
       </div>
 
-      {isStandalonePwa ? (
+      {isStandalonePwa && isMobileMenuOpen ? (
         <div
-          className={[
-            "fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm transition duration-200 md:hidden",
-            isMobileMenuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
-          ].join(" ")}
-          aria-hidden={!isMobileMenuOpen}
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm transition duration-200 md:hidden"
+          aria-hidden={false}
           onClick={() => setIsMobileMenuOpen(false)}
         >
           <div
@@ -180,10 +177,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             role="dialog"
             aria-modal="true"
             aria-label="Navegação principal"
-            className={[
-              "safe-top safe-bottom absolute inset-y-0 right-0 flex w-[min(86vw,22rem)] flex-col border-l border-white/10 bg-slate-950/95 px-4 py-4 shadow-2xl shadow-slate-950/70 transition-transform duration-200",
-              isMobileMenuOpen ? "translate-x-0" : "translate-x-full",
-            ].join(" ")}
+            className="safe-top safe-bottom absolute inset-y-0 right-0 flex w-[min(86vw,22rem)] flex-col border-l border-white/10 bg-slate-950/95 px-4 py-4 shadow-2xl shadow-slate-950/70 transition-transform duration-200 translate-x-0"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-3 border-b border-white/10 pb-4">
@@ -245,7 +239,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </div>
-      ) : (
+      ) : !isStandalonePwa ? (
         <nav className="safe-bottom fixed inset-x-4 bottom-0 z-30 md:hidden">
           <div className={["glass-surface grid gap-2 px-3 py-3", links.length >= 6 ? "grid-cols-7" : "grid-cols-6"].join(" ")}>
             {links.map((link) => {
@@ -274,7 +268,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </nav>
-      )}
+      ) : null}
     </div>
   );
 }

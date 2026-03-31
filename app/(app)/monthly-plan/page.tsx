@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CalendarRange, Link2, Plus, ReceiptText, RefreshCw, Trash2 } from "lucide-react";
+import { AccordionSection } from "@/components/accordion-section";
 import { CategoryCombobox } from "@/components/category-combobox";
 
 type Category = {
@@ -218,6 +219,12 @@ export default function MonthlyPlanPage() {
   const [itemErrorMessages, setItemErrorMessages] = useState<Record<string, string>>({});
   const [itemSuccessMessages, setItemSuccessMessages] = useState<Record<string, string>>({});
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [sectionExpanded, setSectionExpanded] = useState<Record<SectionKey, boolean>>({
+    general: true,
+    investments: false,
+    emergency_reserve: false,
+    debts: false,
+  });
 
   const groupedItems = useMemo(
     () =>
@@ -374,7 +381,8 @@ export default function MonthlyPlanPage() {
         ...prev,
         [section]: "Preencha os campos destacados antes de adicionar o item.",
       }));
-      focusFirstInvalidField(`new-${section}`, validationErrors);
+      setSectionExpanded((prev) => ({ ...prev, [section]: true }));
+      queueMicrotask(() => focusFirstInvalidField(`new-${section}`, validationErrors));
       return;
     }
 
@@ -407,6 +415,7 @@ export default function MonthlyPlanPage() {
       setNewItemErrors((prev) => ({ ...prev, [section]: createBlankFieldErrors() }));
       await loadData();
     } catch (err) {
+      setSectionExpanded((prev) => ({ ...prev, [section]: true }));
       setSectionErrors((prev) => ({
         ...prev,
         [section]: err instanceof Error ? err.message : "Não foi possível criar o item.",
@@ -420,13 +429,17 @@ export default function MonthlyPlanPage() {
     const draft = itemDrafts[itemId];
     const validationErrors = validateItemDraft(draft);
     if (Object.keys(validationErrors).length > 0) {
+      const owning = items.find((i) => i.id === itemId);
+      if (owning) {
+        setSectionExpanded((prev) => ({ ...prev, [owning.section]: true }));
+      }
       setItemErrors((prev) => ({ ...prev, [itemId]: validationErrors }));
       setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "" }));
       setItemErrorMessages((prev) => ({
         ...prev,
         [itemId]: "Preencha os campos destacados antes de salvar o item.",
       }));
-      focusFirstInvalidField(`item-${itemId}`, validationErrors);
+      queueMicrotask(() => focusFirstInvalidField(`item-${itemId}`, validationErrors));
       return;
     }
 
@@ -454,6 +467,10 @@ export default function MonthlyPlanPage() {
       await loadData();
       setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "Item salvo com sucesso." }));
     } catch (err) {
+      const owning = items.find((i) => i.id === itemId);
+      if (owning) {
+        setSectionExpanded((prev) => ({ ...prev, [owning.section]: true }));
+      }
       setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "" }));
       setItemErrorMessages((prev) => ({
         ...prev,
@@ -722,19 +739,18 @@ export default function MonthlyPlanPage() {
 
       <section className="space-y-6">
         {groupedItems.map((section) => (
-          <div key={section.key} className="glass-surface p-5 sm:p-6">
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <div className="soft-label text-slate-400">{section.label}</div>
-                <h3 className="mt-2 text-2xl font-semibold text-white">{section.label}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-400">{section.helper}</p>
-              </div>
-              <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
-                {section.items.length} itens
-              </span>
-            </div>
-
-            <div className="mt-5 rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
+          <AccordionSection
+            key={section.key}
+            instanceId={section.key}
+            open={sectionExpanded[section.key]}
+            onOpenChange={(next) => setSectionExpanded((prev) => ({ ...prev, [section.key]: next }))}
+            softLabel={section.label}
+            title={section.label}
+            helper={section.helper}
+            badge={`${section.items.length} itens`}
+            heading="h3"
+          >
+            <div className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_1.2fr_0.68fr_0.8fr_1.12fr]">
                 <input
                   data-item-scope={`new-${section.key}`}
@@ -950,7 +966,7 @@ export default function MonthlyPlanPage() {
                 </div>
               )}
             </div>
-          </div>
+          </AccordionSection>
         ))}
 
         <div className="glass-surface p-5 sm:p-6">

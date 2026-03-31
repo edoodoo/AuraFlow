@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarRange, TrendingUp } from "lucide-react";
+import { AccordionSection } from "@/components/accordion-section";
 import { COMPARISON_SECTION_HELPERS, COMPARISON_SECTION_LABELS, COMPARISON_SECTION_ORDER, type ComparisonSectionKey } from "@/lib/monthly-sections";
 
 type Row = {
@@ -29,6 +30,12 @@ export default function ComparisonPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sectionOpen, setSectionOpen] = useState<Record<ComparisonSectionKey, boolean>>(() =>
+    Object.fromEntries(COMPARISON_SECTION_ORDER.map((key, i) => [key, i === 0])) as Record<
+      ComparisonSectionKey,
+      boolean
+    >,
+  );
   const groupedSections = useMemo(
     () =>
       COMPARISON_SECTION_ORDER.map((sectionKey) => ({
@@ -96,19 +103,18 @@ export default function ComparisonPage() {
         <p className="mt-5 text-sm text-slate-400">Carregando comparação...</p>
       ) : (
         groupedSections.map((section) => (
-          <div key={section.key} className="glass-surface p-5 sm:p-6">
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <div className="soft-label text-slate-400">{section.label}</div>
-                <h2 className="mt-2 text-2xl font-semibold text-white">{section.label}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-400">{section.helper}</p>
-              </div>
-              <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
-                {section.rows.length} categorias
-              </span>
-            </div>
-
-            <div className="mt-5 space-y-3">
+          <AccordionSection
+            key={section.key}
+            instanceId={section.key}
+            open={sectionOpen[section.key] ?? false}
+            onOpenChange={(next) => setSectionOpen((prev) => ({ ...prev, [section.key]: next }))}
+            softLabel={section.label}
+            title={section.label}
+            helper={section.helper}
+            badge={`${section.rows.length} categorias`}
+            heading="h2"
+          >
+            <div className="space-y-3">
               {section.rows.length > 0 ? (
                 section.rows.map((row) => {
                   const pct = row.expected_amount > 0 ? (row.linked_realized_amount / row.expected_amount) * 100 : 0;
@@ -184,7 +190,7 @@ export default function ComparisonPage() {
                 </div>
               )}
             </div>
-          </div>
+          </AccordionSection>
         ))
       )}
     </div>

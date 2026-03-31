@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 780" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="glassBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0a1220" stop-opacity="0.65"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="780" fill="#08111f"/>
+
+  <!-- Title -->
+  <rect x="40" y="18" width="72" height="22" rx="11" fill="rgba(167,139,250,0.12)"/>
+  <text x="56" y="33" fill="#a78bfa" font-size="9" font-weight="600" letter-spacing="0.06em">OPÇÃO C</text>
+  <text x="48" y="66" fill="#e5eefc" font-size="22" font-weight="700">Hybrid Data Grid — Agrupado por Categoria</text>
+
+  <!-- Accordion surface -->
+  <rect x="40" y="90" width="1200" height="656" rx="24" fill="url(#glassBg)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+
+  <!-- Accordion header -->
+  <text x="72" y="128" fill="#e5eefc" font-size="17" font-weight="600">Gastos mensais</text>
+  <rect x="210" y="114" width="52" height="22" rx="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="220" y="129" fill="#38bdf8" font-size="10" font-weight="600">8 itens</text>
+  <text x="1170" y="128" fill="#38bdf8" font-size="16" font-weight="700" text-anchor="end">R$ 8.239,00</text>
+  <line x1="56" y1="146" x2="1224" y2="146" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- GROUP: Moradia -->
+  <rect x="56" y="158" width="1168" height="120" rx="16" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <!-- Group header -->
+  <rect x="56" y="158" width="1168" height="34" rx="16" fill="rgba(255,255,255,0.025)"/>
+  <rect x="56" y="175" width="1168" height="17" fill="rgba(255,255,255,0.025)"/>
+  <text x="88" y="180" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="0.08em">MORADIA</text>
+  <rect x="160" y="168" width="48" height="18" rx="9" fill="rgba(255,255,255,0.04)"/>
+  <text x="172" y="181" fill="#64748b" font-size="9">2 itens</text>
+  <text x="1192" y="181" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 3.450,00</text>
+  <line x1="72" y1="192" x2="1208" y2="192" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+  <!-- Item rows -->
+  <text x="104" y="216" fill="#e5eefc" font-size="12.5" font-weight="500">Aluguel</text>
+  <text x="580" y="216" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 2.800,00</text>
+  <text x="630" y="216" fill="#94a3b8" font-size="11.5">05/04</text>
+  <circle cx="742" cy="212" r="10" fill="rgba(56,189,248,0.12)"/>
+  <text x="742" y="216" fill="#38bdf8" font-size="7.5" font-weight="700" text-anchor="middle">E</text>
+  <text x="758" y="216" fill="#94a3b8" font-size="11.5">Eduardo</text>
+  <rect x="880" y="203" width="52" height="18" rx="9" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="892" cy="212" r="3" fill="#34d399"/>
+  <text x="900" y="216" fill="#34d399" font-size="10" font-weight="500">Pago</text>
+  <line x1="88" y1="228" x2="1208" y2="228" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+
+  <text x="104" y="252" fill="#e5eefc" font-size="12.5" font-weight="500">Condomínio</text>
+  <text x="580" y="252" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 650,00</text>
+  <text x="630" y="252" fill="#94a3b8" font-size="11.5">05/04</text>
+  <circle cx="742" cy="248" r="10" fill="rgba(56,189,248,0.12)"/>
+  <text x="742" y="252" fill="#38bdf8" font-size="7.5" font-weight="700" text-anchor="middle">E</text>
+  <text x="758" y="252" fill="#94a3b8" font-size="11.5">Eduardo</text>
+  <rect x="880" y="239" width="52" height="18" rx="9" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="892" cy="248" r="3" fill="#34d399"/>
+  <text x="900" y="252" fill="#34d399" font-size="10" font-weight="500">Pago</text>
+
+  <!-- GROUP: Alimentação -->
+  <rect x="56" y="290" width="1168" height="120" rx="16" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="56" y="290" width="1168" height="34" rx="16" fill="rgba(255,255,255,0.025)"/>
+  <rect x="56" y="307" width="1168" height="17" fill="rgba(255,255,255,0.025)"/>
+  <text x="88" y="312" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="0.08em">ALIMENTAÇÃO</text>
+  <rect x="190" y="300" width="48" height="18" rx="9" fill="rgba(255,255,255,0.04)"/>
+  <text x="202" y="313" fill="#64748b" font-size="9">2 itens</text>
+  <text x="1192" y="313" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 1.800,00</text>
+  <line x1="72" y1="324" x2="1208" y2="324" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+
+  <text x="104" y="348" fill="#e5eefc" font-size="12.5" font-weight="500">Mercado</text>
+  <text x="580" y="348" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 1.200,00</text>
+  <text x="630" y="348" fill="#94a3b8" font-size="11.5">—</text>
+  <circle cx="742" cy="344" r="10" fill="rgba(56,189,248,0.12)"/>
+  <text x="742" y="348" fill="#38bdf8" font-size="7.5" font-weight="700" text-anchor="middle">A</text>
+  <text x="758" y="348" fill="#94a3b8" font-size="11.5">Ana</text>
+  <rect x="880" y="335" width="66" height="18" rx="9" fill="rgba(71,85,105,0.2)"/>
+  <circle cx="892" cy="344" r="3" fill="#475569"/>
+  <text x="900" y="348" fill="#475569" font-size="10" font-weight="500">Pendente</text>
+  <line x1="88" y1="360" x2="1208" y2="360" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+
+  <text x="104" y="384" fill="#e5eefc" font-size="12.5" font-weight="500">iFood</text>
+  <text x="580" y="384" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 600,00</text>
+  <text x="630" y="384" fill="#94a3b8" font-size="11.5">—</text>
+  <circle cx="742" cy="380" r="10" fill="rgba(56,189,248,0.12)"/>
+  <text x="742" y="384" fill="#38bdf8" font-size="7.5" font-weight="700" text-anchor="middle">E</text>
+  <text x="758" y="384" fill="#94a3b8" font-size="11.5">Eduardo</text>
+  <rect x="880" y="371" width="60" height="18" rx="9" fill="rgba(251,191,36,0.12)"/>
+  <circle cx="892" cy="380" r="3" fill="#fbbf24"/>
+  <text x="900" y="384" fill="#fbbf24" font-size="10" font-weight="500">Parcial</text>
+
+  <!-- GROUP: Utilidades -->
+  <rect x="56" y="422" width="1168" height="152" rx="16" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="56" y="422" width="1168" height="34" rx="16" fill="rgba(255,255,255,0.025)"/>
+  <rect x="56" y="439" width="1168" height="17" fill="rgba(255,255,255,0.025)"/>
+  <text x="88" y="444" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="0.08em">UTILIDADES</text>
+  <rect x="172" y="432" width="48" height="18" rx="9" fill="rgba(255,255,255,0.04)"/>
+  <text x="184" y="445" fill="#64748b" font-size="9">3 itens</text>
+  <text x="1192" y="445" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 589,00</text>
+  <line x1="72" y1="456" x2="1208" y2="456" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+
+  <text x="104" y="480" fill="#e5eefc" font-size="12.5" font-weight="500">Internet</text>
+  <text x="580" y="480" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 189,00</text>
+  <text x="630" y="480" fill="#94a3b8" font-size="11.5">10/04</text>
+  <circle cx="742" cy="476" r="10" fill="rgba(56,189,248,0.12)"/>
+  <text x="742" y="480" fill="#38bdf8" font-size="7.5" font-weight="700" text-anchor="middle">E</text>
+  <text x="758" y="480" fill="#94a3b8" font-size="11.5">Eduardo</text>
+  <rect x="880" y="467" width="60" height="18" rx="9" fill="rgba(251,191,36,0.12)"/>
+  <circle cx="892" cy="476" r="3" fill="#fbbf24"/>
+  <text x="900" y="480" fill="#fbbf24" font-size="10" font-weight="500">Parcial</text>
+  <line x1="88" y1="492" x2="1208" y2="492" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+
+  <text x="104" y="516" fill="#e5eefc" font-size="12.5" font-weight="500">Energia</text>
+  <text x="580" y="516" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 250,00</text>
+  <text x="630" y="516" fill="#94a3b8" font-size="11.5">15/04</text>
+  <circle cx="742" cy="512" r="10" fill="rgba(56,189,248,0.12)"/>
+  <text x="742" y="516" fill="#38bdf8" font-size="7.5" font-weight="700" text-anchor="middle">A</text>
+  <text x="758" y="516" fill="#94a3b8" font-size="11.5">Ana</text>
+  <rect x="880" y="503" width="52" height="18" rx="9" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="892" cy="512" r="3" fill="#34d399"/>
+  <text x="900" y="516" fill="#34d399" font-size="10" font-weight="500">Pago</text>
+  <line x1="88" y1="528" x2="1208" y2="528" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+
+  <text x="104" y="552" fill="#e5eefc" font-size="12.5" font-weight="500">Água</text>
+  <text x="580" y="552" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 150,00</text>
+  <text x="630" y="552" fill="#94a3b8" font-size="11.5">20/04</text>
+  <circle cx="742" cy="548" r="10" fill="rgba(56,189,248,0.12)"/>
+  <text x="742" y="552" fill="#38bdf8" font-size="7.5" font-weight="700" text-anchor="middle">E</text>
+  <text x="758" y="552" fill="#94a3b8" font-size="11.5">Eduardo</text>
+  <rect x="880" y="539" width="52" height="18" rx="9" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="892" cy="548" r="3" fill="#34d399"/>
+  <text x="900" y="552" fill="#34d399" font-size="10" font-weight="500">Pago</text>
+
+  <!-- GROUP: Saúde -->
+  <rect x="56" y="586" width="1168" height="82" rx="16" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="56" y="586" width="1168" height="34" rx="16" fill="rgba(255,255,255,0.025)"/>
+  <rect x="56" y="603" width="1168" height="17" fill="rgba(255,255,255,0.025)"/>
+  <text x="88" y="608" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="0.08em">SAÚDE</text>
+  <rect x="143" y="596" width="44" height="18" rx="9" fill="rgba(255,255,255,0.04)"/>
+  <text x="153" y="609" fill="#64748b" font-size="9">1 item</text>
+  <text x="1192" y="609" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 1.350,00</text>
+  <line x1="72" y1="620" x2="1208" y2="620" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+  <text x="104" y="648" fill="#e5eefc" font-size="12.5" font-weight="500">Plano de Saúde</text>
+  <text x="580" y="648" fill="#38bdf8" font-size="13" font-weight="600" text-anchor="end">R$ 1.350,00</text>
+  <text x="630" y="648" fill="#94a3b8" font-size="11.5">20/04</text>
+  <circle cx="742" cy="644" r="10" fill="rgba(56,189,248,0.12)"/>
+  <text x="742" y="648" fill="#38bdf8" font-size="7.5" font-weight="700" text-anchor="middle">E</text>
+  <text x="758" y="648" fill="#94a3b8" font-size="11.5">Eduardo</text>
+  <rect x="880" y="635" width="60" height="18" rx="9" fill="rgba(251,191,36,0.12)"/>
+  <circle cx="892" cy="644" r="3" fill="#fbbf24"/>
+  <text x="900" y="648" fill="#fbbf24" font-size="10" font-weight="500">Parcial</text>
+
+  <!-- Summary bar -->
+  <line x1="56" y1="682" x2="1224" y2="682" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <!-- Pago chip -->
+  <rect x="64" y="694" width="380" height="40" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+  <text x="254" y="710" fill="#64748b" font-size="9" font-weight="600" letter-spacing="0.1em" text-anchor="middle">PAGO</text>
+  <text x="254" y="728" fill="#34d399" font-size="14" font-weight="700" text-anchor="middle">R$ 4.850,00</text>
+  <!-- Parcial chip -->
+  <rect x="452" y="694" width="380" height="40" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+  <text x="642" y="710" fill="#64748b" font-size="9" font-weight="600" letter-spacing="0.1em" text-anchor="middle">PARCIAL</text>
+  <text x="642" y="728" fill="#fbbf24" font-size="14" font-weight="700" text-anchor="middle">R$ 2.189,00</text>
+  <!-- Pendente chip -->
+  <rect x="840" y="694" width="380" height="40" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+  <text x="1030" y="710" fill="#64748b" font-size="9" font-weight="600" letter-spacing="0.1em" text-anchor="middle">PENDENTE</text>
+  <text x="1030" y="728" fill="#475569" font-size="14" font-weight="700" text-anchor="middle">R$ 1.200,00</text>
+
+  <!-- Legend -->
+  <rect x="48" y="750" width="1184" height="24" rx="12" fill="rgba(167,139,250,0.04)" stroke="rgba(167,139,250,0.1)" stroke-width="0.5"/>
+  <text x="72" y="766" fill="#94a3b8" font-size="10.5"><tspan fill="#a78bfa" font-weight="600">Opção C — Hybrid Grid:</tspan> Agrupamento por categoria com subtotais. Camada analítica. ~42px/item dentro dos grupos. Summary bar. Melhor para seções com 10+ itens em categorias repetidas.</text>
+</svg>

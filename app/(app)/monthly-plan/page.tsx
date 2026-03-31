@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CalendarRange, Link2, Plus, ReceiptText, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowRight, CalendarRange, Check, Link2, Pencil, Plus, ReceiptText, RefreshCw, Trash2 } from "lucide-react";
 import { AccordionSection } from "@/components/accordion-section";
 import { CategoryCombobox } from "@/components/category-combobox";
 
@@ -113,17 +113,64 @@ const fieldErrorClass = "border-rose-400/70 ring-1 ring-rose-400/40 focus:border
 const compactMonthlyFieldClass = "min-h-11 px-3 py-2 text-[13px]";
 const compactMonthlyInlineFieldClass = "min-h-10 px-3 py-2 text-[13px]";
 const compactMonthlySecondaryButtonClass = "inline-flex items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium";
-const compactMonthlySummaryCardClass = "rounded-2xl bg-slate-950/40 px-4 py-2.5 text-[13px]";
 
 function getCategoryName(category: PlanItem["category"]) {
   if (Array.isArray(category)) return category[0]?.name ?? "Sem categoria";
   return category?.name ?? "Sem categoria";
 }
 
-function getPaymentStatusLabel(item: PlanItem) {
-  if (item.status === "paid") return "Pago";
-  if (item.status === "partial") return `Parcial - ${formatCurrency(item.paid_amount)}`;
-  return "Pendente";
+function formatShortDueDate(value: string | null) {
+  if (!value) return "Sem vencimento";
+
+  const [year, month, day] = value.split("-");
+  if (year && month && day) {
+    return `Venc. ${day}/${month}`;
+  }
+
+  return `Venc. ${value}`;
+}
+
+function getPaymentStatusConfig(item: PlanItem) {
+  if (item.status === "paid") {
+    return {
+      label: "Pago",
+      borderClass: "border-l-emerald-400",
+      badgeClass: "bg-emerald-400/[0.12] text-emerald-300",
+      dotClass: "bg-emerald-400",
+    };
+  }
+
+  if (item.status === "partial") {
+    return {
+      label: `Parcial · ${formatCurrency(item.paid_amount)}`,
+      borderClass: "border-l-amber-500",
+      badgeClass: "bg-amber-400/[0.12] text-amber-300",
+      dotClass: "bg-amber-400",
+    };
+  }
+
+  return {
+    label: "Pendente",
+    borderClass: "border-l-slate-700",
+    badgeClass: "bg-slate-600/20 text-slate-400",
+    dotClass: "bg-slate-500",
+  };
+}
+
+function StatusBadge({ item }: { item: PlanItem }) {
+  const config = getPaymentStatusConfig(item);
+
+  return (
+    <span
+      className={[
+        "inline-flex shrink-0 items-center gap-[0.3rem] rounded-full px-[0.6rem] py-[0.18rem] text-[0.7rem] font-medium",
+        config.badgeClass,
+      ].join(" ")}
+    >
+      <span className={["h-[7px] w-[7px] shrink-0 rounded-full", config.dotClass].join(" ")} aria-hidden />
+      {config.label}
+    </span>
+  );
 }
 
 function createBlankItemDraft(): ItemDraft {
@@ -218,6 +265,7 @@ export default function MonthlyPlanPage() {
   const [itemErrors, setItemErrors] = useState<Record<string, ItemFieldErrors>>({});
   const [itemErrorMessages, setItemErrorMessages] = useState<Record<string, string>>({});
   const [itemSuccessMessages, setItemSuccessMessages] = useState<Record<string, string>>({});
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [sectionExpanded, setSectionExpanded] = useState<Record<SectionKey, boolean>>({
     general: true,
@@ -242,6 +290,16 @@ export default function MonthlyPlanPage() {
         keywords: `${category.name} ${category.category_kind === "fixed" ? "fixo" : "variável"}`,
       })),
     [categories],
+  );
+  const categoryNameById = useMemo(
+    () =>
+      Object.fromEntries(categories.map((category) => [category.id, category.name])) as Record<string, string>,
+    [categories],
+  );
+  const memberLabelById = useMemo(
+    () =>
+      Object.fromEntries(memberOptions.map((member) => [member.user_id, member.label])) as Record<string, string>,
+    [memberOptions],
   );
 
   const loadData = async () => {
@@ -294,6 +352,10 @@ export default function MonthlyPlanPage() {
     );
 
     setItemDrafts(drafts);
+  }, [items]);
+
+  useEffect(() => {
+    setExpandedItemId((prev) => (prev && items.some((item) => item.id === prev) ? prev : null));
   }, [items]);
 
   const ensurePlan = async (e?: FormEvent) => {
@@ -433,6 +495,7 @@ export default function MonthlyPlanPage() {
       if (owning) {
         setSectionExpanded((prev) => ({ ...prev, [owning.section]: true }));
       }
+      setExpandedItemId(itemId);
       setItemErrors((prev) => ({ ...prev, [itemId]: validationErrors }));
       setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "" }));
       setItemErrorMessages((prev) => ({
@@ -465,12 +528,14 @@ export default function MonthlyPlanPage() {
       if (!res.ok) throw new Error(data.error ?? "Não foi possível atualizar o item.");
       setItemErrors((prev) => ({ ...prev, [itemId]: createBlankFieldErrors() }));
       await loadData();
+      setExpandedItemId(null);
       setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "Item salvo com sucesso." }));
     } catch (err) {
       const owning = items.find((i) => i.id === itemId);
       if (owning) {
         setSectionExpanded((prev) => ({ ...prev, [owning.section]: true }));
       }
+      setExpandedItemId(itemId);
       setItemSuccessMessages((prev) => ({ ...prev, [itemId]: "" }));
       setItemErrorMessages((prev) => ({
         ...prev,
@@ -489,6 +554,7 @@ export default function MonthlyPlanPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível remover o item.");
       await loadData();
+      setExpandedItemId((prev) => (prev === itemId ? null : prev));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível remover o item.");
     } finally {
@@ -841,120 +907,199 @@ export default function MonthlyPlanPage() {
                 {section.items.map((item) => {
                   const draft = itemDrafts[item.id] ?? createBlankItemDraft();
                   const currentItemErrors = itemErrors[item.id] ?? {};
+                  const isExpanded = expandedItemId === item.id;
+                  const statusConfig = getPaymentStatusConfig(item);
+                  const displayTitle = draft.title.trim() || item.title || "Sem título";
+                  const parsedDraftAmount = Number(draft.expected_amount);
+                  const displayAmount =
+                    draft.expected_amount.trim() && Number.isFinite(parsedDraftAmount)
+                      ? parsedDraftAmount
+                      : item.expected_amount;
+                  const categoryName = draft.category_id
+                    ? categoryNameById[draft.category_id] ?? "Sem categoria"
+                    : getCategoryName(item.category);
+                  const assignedLabel = draft.assigned_user_id
+                    ? memberLabelById[draft.assigned_user_id] ?? "Sem responsável"
+                    : "Sem responsável";
+                  const metaLine = [categoryName, assignedLabel, formatShortDueDate(draft.due_date || null), draft.is_fixed ? "Fixo" : null]
+                    .filter(Boolean)
+                    .join(" · ");
+                  const notesPreview = draft.notes.trim() ? draft.notes.trim() : "Sem observações";
                   return (
                     <motion.div
                       key={item.id}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4"
+                      tabIndex={0}
+                      className={[
+                        "group rounded-[1.25rem] border border-white/[0.12] border-l-[3px] px-[1.1rem] py-[0.85rem] outline-none transition-[background,border-color,box-shadow] duration-200",
+                        statusConfig.borderClass,
+                        isExpanded ? "bg-white/[0.06] ring-1 ring-cyan-400/20" : "bg-white/5 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-cyan-400/30",
+                      ].join(" ")}
                     >
-                      <div className="grid grid-cols-1 gap-3 2xl:grid-cols-[1.05fr_1.2fr_0.68fr_0.8fr_1.12fr_auto]">
-                        <input
-                          data-item-scope={`item-${item.id}`}
-                          data-field="title"
-                          value={draft.title}
-                          onChange={(e) => updateDraft(item.id, { title: e.target.value })}
-                          className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.title))].filter(Boolean).join(" ")}
-                        />
-                        <CategoryCombobox
-                          dataScope={`item-${item.id}`}
-                          dataField="category_id"
-                          value={draft.category_id}
-                          onChange={(nextValue) => updateDraft(item.id, { category_id: nextValue })}
-                          options={categoryOptions}
-                          placeholder="Selecione a categoria"
-                          compact
-                          panelClassName="2xl:min-w-[22rem]"
-                          className={getDraftInputClass(Boolean(currentItemErrors.category_id))}
-                        />
-                        <input
-                          data-item-scope={`item-${item.id}`}
-                          data-field="expected_amount"
-                          type="number"
-                          step="0.01"
-                          value={draft.expected_amount}
-                          onChange={(e) => updateDraft(item.id, { expected_amount: e.target.value })}
-                          className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.expected_amount))].filter(Boolean).join(" ")}
-                        />
-                        <input
-                          data-item-scope={`item-${item.id}`}
-                          data-field="due_date"
-                          type="date"
-                          value={draft.due_date}
-                          onChange={(e) => updateDraft(item.id, { due_date: e.target.value })}
-                          className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.due_date))].filter(Boolean).join(" ")}
-                        />
-                        <select
-                          data-item-scope={`item-${item.id}`}
-                          data-field="assigned_user_id"
-                          value={draft.assigned_user_id}
-                          onChange={(e) => updateDraft(item.id, { assigned_user_id: e.target.value })}
-                          className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.assigned_user_id))].filter(Boolean).join(" ")}
-                        >
-                          <option value="">Selecione o responsável</option>
-                          {memberOptions.map((member) => (
-                            <option key={member.user_id} value={member.user_id}>
-                              {member.label}
-                            </option>
-                          ))}
-                        </select>
-                        <button type="button" className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => void saveItem(item.id)}>
-                          Salvar
-                        </button>
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[0.95rem] font-semibold text-white">{displayTitle}</div>
+                        </div>
+                        <StatusBadge item={item} />
+                        <div className="min-w-[8rem] shrink-0 text-right text-lg font-bold tabular-nums text-cyan-300">
+                          {formatCurrency(displayAmount)}
+                        </div>
                       </div>
 
-                      {itemErrorMessages[item.id] && (
-                        <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                          {itemErrorMessages[item.id]}
-                        </p>
-                      )}
-                      {itemSuccessMessages[item.id] && (
+                      <p className="mt-[0.3rem] truncate text-xs leading-[1.45] text-slate-400">{metaLine}</p>
+
+                      <div
+                        className={[
+                          "overflow-hidden transition-all duration-200",
+                          isExpanded
+                            ? "mt-[0.6rem] max-h-16 border-t border-white/[0.06] pt-[0.55rem] opacity-100"
+                            : "max-h-0 border-t border-transparent pt-0 opacity-0 group-hover:mt-[0.6rem] group-hover:max-h-16 group-hover:border-white/[0.06] group-hover:pt-[0.55rem] group-hover:opacity-100 group-focus-within:mt-[0.6rem] group-focus-within:max-h-16 group-focus-within:border-white/[0.06] group-focus-within:pt-[0.55rem] group-focus-within:opacity-100",
+                        ].join(" ")}
+                      >
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            aria-expanded={isExpanded}
+                            aria-controls={`item-edit-${item.id}`}
+                            className="secondary-button border-white/10 bg-white/5 px-3 py-2 text-white hover:bg-white/10"
+                            onClick={() => {
+                              setSectionExpanded((prev) => ({ ...prev, [item.section]: true }));
+                              setExpandedItemId((prev) => (prev === item.id ? null : item.id));
+                            }}
+                          >
+                            <Pencil size={14} />
+                            {isExpanded ? "Fechar" : "Editar"}
+                          </button>
+                          <button
+                            type="button"
+                            className={`${compactMonthlySecondaryButtonClass} border border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20`}
+                            onClick={() => void removeItem(item.id)}
+                          >
+                            <Trash2 size={14} />
+                            Remover
+                          </button>
+                          <p className="ml-auto min-w-0 flex-1 truncate text-right text-xs italic text-slate-500">
+                            {notesPreview}
+                          </p>
+                        </div>
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {isExpanded && (
+                          <motion.div
+                            id={`item-edit-${item.id}`}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-[0.7rem] border-t border-white/[0.06] pt-[0.7rem]">
+                              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.1fr_1.2fr_0.7fr_0.85fr_1.1fr_auto]">
+                                <input
+                                  data-item-scope={`item-${item.id}`}
+                                  data-field="title"
+                                  value={draft.title}
+                                  onChange={(e) => updateDraft(item.id, { title: e.target.value })}
+                                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.title))].filter(Boolean).join(" ")}
+                                />
+                                <CategoryCombobox
+                                  dataScope={`item-${item.id}`}
+                                  dataField="category_id"
+                                  value={draft.category_id}
+                                  onChange={(nextValue) => updateDraft(item.id, { category_id: nextValue })}
+                                  options={categoryOptions}
+                                  placeholder="Selecione a categoria"
+                                  compact
+                                  panelClassName="xl:min-w-[22rem]"
+                                  className={getDraftInputClass(Boolean(currentItemErrors.category_id))}
+                                />
+                                <input
+                                  data-item-scope={`item-${item.id}`}
+                                  data-field="expected_amount"
+                                  type="number"
+                                  step="0.01"
+                                  value={draft.expected_amount}
+                                  onChange={(e) => updateDraft(item.id, { expected_amount: e.target.value })}
+                                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.expected_amount))].filter(Boolean).join(" ")}
+                                />
+                                <input
+                                  data-item-scope={`item-${item.id}`}
+                                  data-field="due_date"
+                                  type="date"
+                                  value={draft.due_date}
+                                  onChange={(e) => updateDraft(item.id, { due_date: e.target.value })}
+                                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.due_date))].filter(Boolean).join(" ")}
+                                />
+                                <select
+                                  data-item-scope={`item-${item.id}`}
+                                  data-field="assigned_user_id"
+                                  value={draft.assigned_user_id}
+                                  onChange={(e) => updateDraft(item.id, { assigned_user_id: e.target.value })}
+                                  className={[compactMonthlyFieldClass, getDraftInputClass(Boolean(currentItemErrors.assigned_user_id))].filter(Boolean).join(" ")}
+                                >
+                                  <option value="">Selecione o responsável</option>
+                                  {memberOptions.map((member) => (
+                                    <option key={member.user_id} value={member.user_id}>
+                                      {member.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  className="primary-button px-4"
+                                  onClick={() => void saveItem(item.id)}
+                                  disabled={saving}
+                                >
+                                  <Check size={16} />
+                                  Salvar
+                                </button>
+                              </div>
+
+                              {itemErrorMessages[item.id] && (
+                                <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                                  {itemErrorMessages[item.id]}
+                                </p>
+                              )}
+                              {itemSuccessMessages[item.id] && (
+                                <p className="mt-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+                                  {itemSuccessMessages[item.id]}
+                                </p>
+                              )}
+
+                              <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center">
+                                <label className="flex items-center gap-2 text-[13px] text-slate-300">
+                                  <input
+                                    type="checkbox"
+                                    checked={draft.is_fixed}
+                                    onChange={(e) => updateDraft(item.id, { is_fixed: e.target.checked })}
+                                  />
+                                  Fixo
+                                </label>
+                                <input
+                                  className={`w-full max-w-none ${compactMonthlyInlineFieldClass}`}
+                                  value={draft.notes}
+                                  onChange={(e) => updateDraft(item.id, { notes: e.target.value })}
+                                  placeholder="Observações"
+                                />
+                                <div className="hidden xl:block" aria-hidden />
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {!isExpanded && itemSuccessMessages[item.id] && (
                         <p className="mt-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
                           {itemSuccessMessages[item.id]}
                         </p>
                       )}
-
-                      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[auto_1fr_auto_auto] lg:items-center">
-                        <label className="flex items-center gap-2 text-[13px] text-slate-300">
-                          <input
-                            type="checkbox"
-                            checked={draft.is_fixed}
-                            onChange={(e) => updateDraft(item.id, { is_fixed: e.target.checked })}
-                          />
-                          Fixo
-                        </label>
-                        <input className={compactMonthlyInlineFieldClass} value={draft.notes} onChange={(e) => updateDraft(item.id, { notes: e.target.value })} placeholder="Observações" />
-                        <span className="rounded-full bg-slate-950/40 px-3 py-1.5 text-xs text-slate-300">
-                          {getCategoryName(item.category)}
-                        </span>
-                        <button
-                          type="button"
-                          className={`${compactMonthlySecondaryButtonClass} border border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20`}
-                          onClick={() => void removeItem(item.id)}
-                        >
-                          <Trash2 size={14} />
-                          Remover
-                        </button>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                        <div className={compactMonthlySummaryCardClass}>
-                          <div className="text-slate-400">Previsto</div>
-                          <div className="mt-1 font-medium text-white">{formatCurrency(item.expected_amount)}</div>
-                        </div>
-                        <div className={compactMonthlySummaryCardClass}>
-                          <div className="text-slate-400">Status</div>
-                          <div className="mt-1 font-medium text-white">{getPaymentStatusLabel(item)}</div>
-                        </div>
-                        <div className={compactMonthlySummaryCardClass}>
-                          <div className="text-slate-400">Quem pagou / data</div>
-                          <div className="mt-1 font-medium text-white">
-                            {item.paid_by_user_id
-                              ? `${memberOptions.find((member) => member.user_id === item.paid_by_user_id)?.label ?? "Usuário"} · ${item.paid_at ?? "--"}`
-                              : "Ainda sem pagamento vinculado"}
-                          </div>
-                        </div>
-                      </div>
+                      {!isExpanded && itemErrorMessages[item.id] && (
+                        <p className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                          {itemErrorMessages[item.id]}
+                        </p>
+                      )}
                     </motion.div>
                   );
                 })}

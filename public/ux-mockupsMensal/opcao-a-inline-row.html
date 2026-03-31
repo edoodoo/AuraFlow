@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraFlow — Opção A: Inline Row (Tabela Premium)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep: #08111f;
+    --bg-surface: rgba(10, 18, 33, 0.74);
+    --bg-card: rgba(255, 255, 255, 0.05);
+    --bg-card-hover: rgba(255, 255, 255, 0.08);
+    --bg-elevated: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.12);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --text-primary: #e5eefc;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --cyan: #38bdf8;
+    --cyan-dim: rgba(56, 189, 248, 0.15);
+    --emerald: #34d399;
+    --emerald-dim: rgba(52, 211, 153, 0.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251, 191, 36, 0.12);
+    --slate-badge: #475569;
+    --rose: #fb7185;
+    --rose-dim: rgba(251, 113, 133, 0.1);
+    --glass-gradient: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(10, 18, 32, 0.65));
+    --radius: 1.5rem;
+    --radius-sm: 0.75rem;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 2rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Page frame */
+  .page-frame {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .badge-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--cyan-dim);
+    color: var(--cyan);
+    margin-bottom: 1rem;
+  }
+
+  .title-bar {
+    margin-bottom: 2rem;
+  }
+  .title-bar h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .title-bar p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.35rem;
+    max-width: 700px;
+    line-height: 1.55;
+  }
+
+  /* Accordion wrapper (simulated, already open) */
+  .accordion-surface {
+    background: var(--glass-gradient);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 24px 80px rgba(2, 6, 23, 0.45);
+    overflow: hidden;
+  }
+
+  .accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .accordion-header .left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .accordion-header h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .accordion-header .count-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--cyan-dim);
+    color: var(--cyan);
+  }
+  .accordion-header .total {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cyan);
+    font-variant-numeric: tabular-nums;
+  }
+  .chevron {
+    width: 20px;
+    height: 20px;
+    color: var(--text-tertiary);
+    margin-left: 1rem;
+  }
+
+  /* Table area */
+  .table-wrap {
+    padding: 0;
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 2fr 1.3fr 1.1fr 0.8fr 1fr 1fr 44px;
+    gap: 0.5rem;
+    padding: 0.65rem 1.5rem;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .table-header span {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-tertiary);
+    user-select: none;
+  }
+  .table-header span.align-right {
+    text-align: right;
+  }
+
+  /* Item row */
+  .item-row {
+    display: grid;
+    grid-template-columns: 2fr 1.3fr 1.1fr 0.8fr 1fr 1fr 44px;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.7rem 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.15s ease;
+    cursor: pointer;
+  }
+  .item-row:hover {
+    background: var(--bg-card-hover);
+  }
+  .item-row:last-child {
+    border-bottom: none;
+  }
+
+  .item-row .name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .item-row .name .fixed-pin {
+    width: 14px;
+    height: 14px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .item-row .category {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  .cat-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .item-row .value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--cyan);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .item-row .date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .item-row .assignee {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .avatar-circle {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--cyan);
+    font-size: 0.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
+  .status-badge .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .status-paid {
+    background: var(--emerald-dim);
+    color: var(--emerald);
+  }
+  .status-paid .dot { background: var(--emerald); }
+  .status-partial {
+    background: var(--amber-dim);
+    color: var(--amber);
+  }
+  .status-partial .dot { background: var(--amber); }
+  .status-pending {
+    background: rgba(71, 85, 105, 0.2);
+    color: var(--slate-badge);
+  }
+  .status-pending .dot { background: var(--slate-badge); }
+
+  .expand-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    color: var(--text-tertiary);
+    transition: background 0.15s;
+  }
+  .item-row:hover .expand-chevron {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+  }
+
+  /* Expanded detail sub-row */
+  .detail-row {
+    padding: 0.75rem 1.5rem 1rem;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .detail-row .field-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+  }
+  .detail-row .field-label {
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+  .detail-row .field-value {
+    color: var(--text-secondary);
+  }
+  .detail-row .notes-preview {
+    flex: 1;
+    min-width: 200px;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+  }
+  .btn-remove {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(251, 113, 133, 0.2);
+    background: var(--rose-dim);
+    color: var(--rose);
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-remove:hover {
+    background: rgba(251, 113, 133, 0.18);
+  }
+  .btn-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-edit:hover {
+    background: var(--bg-card-hover);
+  }
+
+  /* Add row */
+  .add-row {
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--cyan);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .add-row:hover {
+    background: var(--bg-card-hover);
+  }
+
+  /* Footer note */
+  .footer-note {
+    margin-top: 2rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-sm);
+    background: rgba(56, 189, 248, 0.06);
+    border: 1px solid rgba(56, 189, 248, 0.12);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .footer-note strong { color: var(--cyan); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page-frame">
+
+  <div class="badge-option">Opção A</div>
+  <div class="title-bar">
+    <h1>Inline Row — Tabela Premium</h1>
+    <p>Cada item ocupa uma única linha horizontal com dados alinhados em colunas fixas. Expand-on-click para edição e metadados. Máxima densidade para listas longas.</p>
+  </div>
+
+  <!-- Accordion surface -->
+  <div class="accordion-surface">
+
+    <!-- Header -->
+    <div class="accordion-header">
+      <div class="left">
+        <h2>Gastos mensais</h2>
+        <span class="count-badge">8 itens</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span class="total">R$ 8.239,00</span>
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Table header -->
+    <div class="table-header">
+      <span>Nome</span>
+      <span>Categoria</span>
+      <span class="align-right">Valor</span>
+      <span>Venc.</span>
+      <span>Responsável</span>
+      <span>Status</span>
+      <span></span>
+    </div>
+
+    <!-- Row 1: Pago -->
+    <div class="item-row">
+      <div class="name">
+        <svg class="fixed-pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+        Aluguel
+      </div>
+      <div class="category"><span class="cat-badge">Moradia</span></div>
+      <div class="value">R$ 2.800,00</div>
+      <div class="date">05/04</div>
+      <div class="assignee"><span class="avatar-circle">E</span> Eduardo</div>
+      <div><span class="status-badge status-paid"><span class="dot"></span>Pago</span></div>
+      <div class="expand-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+
+    <!-- Row 2: Pago -->
+    <div class="item-row">
+      <div class="name">
+        <svg class="fixed-pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+        Condomínio
+      </div>
+      <div class="category"><span class="cat-badge">Moradia</span></div>
+      <div class="value">R$ 650,00</div>
+      <div class="date">05/04</div>
+      <div class="assignee"><span class="avatar-circle">E</span> Eduardo</div>
+      <div><span class="status-badge status-paid"><span class="dot"></span>Pago</span></div>
+      <div class="expand-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+
+    <!-- Row 3: Parcial — EXPANDED -->
+    <div class="item-row" style="background:var(--bg-card-hover); border-bottom: none;">
+      <div class="name">Internet</div>
+      <div class="category"><span class="cat-badge">Utilidades</span></div>
+      <div class="value">R$ 189,00</div>
+      <div class="date">10/04</div>
+      <div class="assignee"><span class="avatar-circle">E</span> Eduardo</div>
+      <div><span class="status-badge status-partial"><span class="dot"></span>Parcial</span></div>
+      <div class="expand-chevron" style="transform:rotate(90deg);"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+    <!-- Expanded detail -->
+    <div class="detail-row">
+      <div class="field-group">
+        <span class="field-label">Fixo:</span>
+        <span class="field-value">Sim</span>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Pago parcial:</span>
+        <span class="field-value" style="color:var(--amber);">R$ 100,00</span>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Pagou:</span>
+        <span class="field-value">Eduardo · 12/03</span>
+      </div>
+      <span class="notes-preview">"Desconto no débito automático"</span>
+      <btn class="btn-edit">Editar</btn>
+      <btn class="btn-remove">Remover</btn>
+    </div>
+
+    <!-- Row 4: Pendente -->
+    <div class="item-row">
+      <div class="name">Mercado</div>
+      <div class="category"><span class="cat-badge">Alimentação</span></div>
+      <div class="value">R$ 1.200,00</div>
+      <div class="date">—</div>
+      <div class="assignee"><span class="avatar-circle">A</span> Ana</div>
+      <div><span class="status-badge status-pending"><span class="dot"></span>Pendente</span></div>
+      <div class="expand-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+
+    <!-- Row 5: Pago -->
+    <div class="item-row">
+      <div class="name">
+        <svg class="fixed-pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+        Energia
+      </div>
+      <div class="category"><span class="cat-badge">Utilidades</span></div>
+      <div class="value">R$ 250,00</div>
+      <div class="date">15/04</div>
+      <div class="assignee"><span class="avatar-circle">A</span> Ana</div>
+      <div><span class="status-badge status-paid"><span class="dot"></span>Pago</span></div>
+      <div class="expand-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+
+    <!-- Row 6: Pendente -->
+    <div class="item-row">
+      <div class="name">iFood</div>
+      <div class="category"><span class="cat-badge">Alimentação</span></div>
+      <div class="value">R$ 600,00</div>
+      <div class="date">—</div>
+      <div class="assignee"><span class="avatar-circle">E</span> Eduardo</div>
+      <div><span class="status-badge status-pending"><span class="dot"></span>Pendente</span></div>
+      <div class="expand-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+
+    <!-- Row 7: Parcial -->
+    <div class="item-row">
+      <div class="name">
+        <svg class="fixed-pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+        Plano de Saúde
+      </div>
+      <div class="category"><span class="cat-badge">Saúde</span></div>
+      <div class="value">R$ 1.350,00</div>
+      <div class="date">20/04</div>
+      <div class="assignee"><span class="avatar-circle">E</span> Eduardo</div>
+      <div><span class="status-badge status-partial"><span class="dot"></span>Parcial</span></div>
+      <div class="expand-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+
+    <!-- Row 8: Pago -->
+    <div class="item-row">
+      <div class="name">Água</div>
+      <div class="category"><span class="cat-badge">Utilidades</span></div>
+      <div class="value">R$ 150,00</div>
+      <div class="date">20/04</div>
+      <div class="assignee"><span class="avatar-circle">E</span> Eduardo</div>
+      <div><span class="status-badge status-paid"><span class="dot"></span>Pago</span></div>
+      <div class="expand-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+    </div>
+
+    <!-- Add item row -->
+    <div class="add-row">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+      Adicionar item
+    </div>
+
+  </div>
+
+  <div class="footer-note">
+    <strong>Opção A — Inline Row:</strong> Máxima densidade (~48px por item). Ideal para seções com 10+ itens. Colunas fixas permitem comparação vertical instantânea. Expand-on-click para edição mantém a tabela limpa. Trade-off: menor respiro visual — pode parecer "spreadsheet" se não equilibrado.
+  </div>
+
+</div>
+</body>
+</html>

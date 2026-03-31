@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraFlow — Opção C: Hybrid Data Grid</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep: #08111f;
+    --bg-surface: rgba(10, 18, 33, 0.74);
+    --bg-card: rgba(255, 255, 255, 0.05);
+    --bg-card-hover: rgba(255, 255, 255, 0.08);
+    --bg-elevated: rgba(255, 255, 255, 0.03);
+    --bg-group-header: rgba(255, 255, 255, 0.025);
+    --border: rgba(255, 255, 255, 0.12);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --text-primary: #e5eefc;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --cyan: #38bdf8;
+    --cyan-dim: rgba(56, 189, 248, 0.15);
+    --emerald: #34d399;
+    --emerald-dim: rgba(52, 211, 153, 0.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251, 191, 36, 0.12);
+    --slate-badge: #475569;
+    --rose: #fb7185;
+    --rose-dim: rgba(251, 113, 133, 0.1);
+    --violet: #a78bfa;
+    --violet-dim: rgba(167, 139, 250, 0.1);
+    --glass-gradient: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(10, 18, 32, 0.65));
+    --radius: 1.5rem;
+    --radius-card: 1rem;
+    --radius-sm: 0.75rem;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 2rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page-frame {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .badge-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--violet-dim);
+    color: var(--violet);
+    margin-bottom: 1rem;
+  }
+
+  .title-bar {
+    margin-bottom: 2rem;
+  }
+  .title-bar h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .title-bar p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.35rem;
+    max-width: 700px;
+    line-height: 1.55;
+  }
+
+  /* Accordion surface */
+  .accordion-surface {
+    background: var(--glass-gradient);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 24px 80px rgba(2, 6, 23, 0.45);
+    overflow: hidden;
+  }
+
+  .accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .accordion-header .left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .accordion-header h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .accordion-header .count-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--cyan-dim);
+    color: var(--cyan);
+  }
+  .accordion-header .total {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cyan);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Groups container */
+  .groups-container {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Category group */
+  .category-group {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: var(--bg-group-header);
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .group-header:hover {
+    background: var(--bg-card);
+  }
+  .group-header .left-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .group-header .chevron-group {
+    width: 14px;
+    height: 14px;
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+  }
+  .group-header.open .chevron-group {
+    transform: rotate(90deg);
+  }
+  .group-header .group-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .group-header .group-count {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+  }
+  .group-header .group-subtotal {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--cyan);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Group items */
+  .group-items {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* Item row inside group */
+  .group-item-row {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr 0.9fr 1fr 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.6rem 1rem 0.6rem 1.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .group-item-row:last-child {
+    border-bottom: none;
+  }
+  .group-item-row:hover {
+    background: var(--bg-card-hover);
+  }
+
+  .group-item-row .name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .group-item-row .name .pin {
+    width: 12px;
+    height: 12px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .group-item-row .value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--cyan);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .group-item-row .date {
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .group-item-row .assignee {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .avatar-sm {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(56,189,248,0.12);
+    color: var(--cyan);
+    font-size: 0.55rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+  .status-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .st-paid { background: var(--emerald-dim); color: var(--emerald); }
+  .st-paid .dot { background: var(--emerald); }
+  .st-partial { background: var(--amber-dim); color: var(--amber); }
+  .st-partial .dot { background: var(--amber); }
+  .st-pending { background: rgba(71,85,105,0.2); color: var(--slate-badge); }
+  .st-pending .dot { background: var(--slate-badge); }
+
+  /* Expanded detail row */
+  .detail-panel {
+    padding: 0.65rem 1rem 0.75rem 1.75rem;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .detail-field {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+  }
+  .detail-field .dl { color: var(--text-tertiary); }
+  .detail-field .dv { color: var(--text-secondary); }
+  .detail-notes {
+    flex: 1;
+    min-width: 150px;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+    text-align: right;
+  }
+  .btn-sm {
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    transition: background 0.15s;
+  }
+  .btn-sm:hover { background: var(--bg-card-hover); }
+  .btn-sm.danger { border-color: rgba(251,113,133,0.2); color: var(--rose); }
+  .btn-sm.danger:hover { background: var(--rose-dim); }
+
+  /* Add row */
+  .add-row {
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--cyan);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .add-row:hover {
+    background: var(--bg-card-hover);
+  }
+
+  /* Summary bar at bottom */
+  .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .summary-chip {
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+  .summary-chip .sc-label {
+    font-size: 0.65rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+  }
+  .summary-chip .sc-value {
+    margin-top: 0.2rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .summary-chip .sc-value.green { color: var(--emerald); }
+  .summary-chip .sc-value.amber { color: var(--amber); }
+  .summary-chip .sc-value.slate { color: var(--slate-badge); }
+
+  .footer-note {
+    margin-top: 2rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-sm);
+    background: rgba(167, 139, 250, 0.06);
+    border: 1px solid rgba(167, 139, 250, 0.12);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .footer-note strong { color: var(--violet); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page-frame">
+
+  <div class="badge-option">Opção C</div>
+  <div class="title-bar">
+    <h1>Hybrid Data Grid — Agrupado por Categoria</h1>
+    <p>Itens agrupados por categoria com sub-headers que mostram subtotais. Dentro de cada grupo, rows densas com dados alinhados. Camada analítica adicional para responder "quanto por categoria?".</p>
+  </div>
+
+  <div class="accordion-surface">
+    <div class="accordion-header">
+      <div class="left">
+        <h2>Gastos mensais</h2>
+        <span class="count-badge">8 itens</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span class="total">R$ 8.239,00</span>
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text-tertiary)"><path d="M18 15l-6-6-6 6"/></svg>
+      </div>
+    </div>
+
+    <div class="groups-container">
+
+      <!-- Group: Moradia -->
+      <div class="category-group">
+        <div class="group-header open">
+          <div class="left-group">
+            <svg class="chevron-group" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            <span class="group-name">Moradia</span>
+            <span class="group-count">2 itens</span>
+          </div>
+          <span class="group-subtotal">R$ 3.450,00</span>
+        </div>
+        <div class="group-items">
+          <div class="group-item-row">
+            <div class="name">
+              <svg class="pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+              Aluguel
+            </div>
+            <div class="value">R$ 2.800,00</div>
+            <div class="date">05/04</div>
+            <div class="assignee"><span class="avatar-sm">E</span> Eduardo</div>
+            <div><span class="status-badge st-paid"><span class="dot"></span>Pago</span></div>
+          </div>
+          <div class="group-item-row">
+            <div class="name">
+              <svg class="pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+              Condomínio
+            </div>
+            <div class="value">R$ 650,00</div>
+            <div class="date">05/04</div>
+            <div class="assignee"><span class="avatar-sm">E</span> Eduardo</div>
+            <div><span class="status-badge st-paid"><span class="dot"></span>Pago</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group: Alimentação -->
+      <div class="category-group">
+        <div class="group-header open">
+          <div class="left-group">
+            <svg class="chevron-group" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            <span class="group-name">Alimentação</span>
+            <span class="group-count">2 itens</span>
+          </div>
+          <span class="group-subtotal">R$ 1.800,00</span>
+        </div>
+        <div class="group-items">
+          <div class="group-item-row">
+            <div class="name">Mercado</div>
+            <div class="value">R$ 1.200,00</div>
+            <div class="date">—</div>
+            <div class="assignee"><span class="avatar-sm">A</span> Ana</div>
+            <div><span class="status-badge st-pending"><span class="dot"></span>Pendente</span></div>
+          </div>
+          <!-- Expanded item -->
+          <div class="group-item-row" style="background:var(--bg-card-hover);border-bottom:none;">
+            <div class="name">iFood</div>
+            <div class="value">R$ 600,00</div>
+            <div class="date">—</div>
+            <div class="assignee"><span class="avatar-sm">E</span> Eduardo</div>
+            <div><span class="status-badge st-partial"><span class="dot"></span>Parcial</span></div>
+          </div>
+          <div class="detail-panel">
+            <div class="detail-field"><span class="dl">Pago:</span> <span class="dv" style="color:var(--amber);">R$ 200,00</span></div>
+            <div class="detail-field"><span class="dl">Restante:</span> <span class="dv">R$ 400,00</span></div>
+            <div class="detail-field"><span class="dl">Pagou:</span> <span class="dv">Eduardo · 15/03</span></div>
+            <span class="detail-notes">"Limite de R$ 600 para delivery este mês"</span>
+            <span class="btn-sm">Editar</span>
+            <span class="btn-sm danger">Remover</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group: Utilidades -->
+      <div class="category-group">
+        <div class="group-header open">
+          <div class="left-group">
+            <svg class="chevron-group" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            <span class="group-name">Utilidades</span>
+            <span class="group-count">3 itens</span>
+          </div>
+          <span class="group-subtotal">R$ 589,00</span>
+        </div>
+        <div class="group-items">
+          <div class="group-item-row">
+            <div class="name">
+              <svg class="pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+              Internet
+            </div>
+            <div class="value">R$ 189,00</div>
+            <div class="date">10/04</div>
+            <div class="assignee"><span class="avatar-sm">E</span> Eduardo</div>
+            <div><span class="status-badge st-partial"><span class="dot"></span>Parcial</span></div>
+          </div>
+          <div class="group-item-row">
+            <div class="name">
+              <svg class="pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+              Energia
+            </div>
+            <div class="value">R$ 250,00</div>
+            <div class="date">15/04</div>
+            <div class="assignee"><span class="avatar-sm">A</span> Ana</div>
+            <div><span class="status-badge st-paid"><span class="dot"></span>Pago</span></div>
+          </div>
+          <div class="group-item-row">
+            <div class="name">Água</div>
+            <div class="value">R$ 150,00</div>
+            <div class="date">20/04</div>
+            <div class="assignee"><span class="avatar-sm">E</span> Eduardo</div>
+            <div><span class="status-badge st-paid"><span class="dot"></span>Pago</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group: Saúde -->
+      <div class="category-group">
+        <div class="group-header open">
+          <div class="left-group">
+            <svg class="chevron-group" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            <span class="group-name">Saúde</span>
+            <span class="group-count">1 item</span>
+          </div>
+          <span class="group-subtotal">R$ 1.350,00</span>
+        </div>
+        <div class="group-items">
+          <div class="group-item-row">
+            <div class="name">
+              <svg class="pin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v10m0 0l-3-3m3 3l3-3M5 21h14"/></svg>
+              Plano de Saúde
+            </div>
+            <div class="value">R$ 1.350,00</div>
+            <div class="date">20/04</div>
+            <div class="assignee"><span class="avatar-sm">E</span> Eduardo</div>
+            <div><span class="status-badge st-partial"><span class="dot"></span>Parcial</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Summary bar -->
+    <div class="summary-bar">
+      <div class="summary-chip">
+        <div class="sc-label">Pago</div>
+        <div class="sc-value green">R$ 4.850,00</div>
+      </div>
+      <div class="summary-chip">
+        <div class="sc-label">Parcial</div>
+        <div class="sc-value amber">R$ 2.189,00</div>
+      </div>
+      <div class="summary-chip">
+        <div class="sc-label">Pendente</div>
+        <div class="sc-value slate">R$ 1.200,00</div>
+      </div>
+    </div>
+
+    <!-- Add row -->
+    <div class="add-row">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+      Adicionar item
+    </div>
+
+  </div>
+
+  <div class="footer-note">
+    <strong>Opção C — Hybrid Data Grid:</strong> Agrupamento por categoria adiciona camada analítica (subtotais). Máxima densidade dentro dos grupos (~42px por item). Summary bar no rodapé. Trade-off: overhead visual se categorias forem diversas (1 item por grupo). Melhor para seções com 10+ itens em categorias repetidas.
+  </div>
+
+</div>
+</body>
+</html>

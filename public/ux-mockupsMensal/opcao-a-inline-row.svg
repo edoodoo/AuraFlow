@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="glassBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0a1220" stop-opacity="0.65"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="#08111f"/>
+
+  <!-- Title -->
+  <text x="48" y="44" fill="#38bdf8" font-size="11" font-weight="600" letter-spacing="0.08em" text-transform="uppercase">OPÇÃO A</text>
+  <text x="48" y="72" fill="#e5eefc" font-size="22" font-weight="700">Inline Row — Tabela Premium</text>
+
+  <!-- Accordion surface -->
+  <rect x="40" y="96" width="1200" height="588" rx="24" fill="url(#glassBg)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+
+  <!-- Accordion header -->
+  <text x="72" y="134" fill="#e5eefc" font-size="17" font-weight="600">Gastos mensais</text>
+  <rect x="210" y="120" width="52" height="22" rx="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="220" y="135" fill="#38bdf8" font-size="10" font-weight="600">8 itens</text>
+  <text x="1170" y="134" fill="#38bdf8" font-size="16" font-weight="700" text-anchor="end" font-variant="tabular-nums">R$ 8.239,00</text>
+  <line x1="56" y1="152" x2="1224" y2="152" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Table header -->
+  <rect x="40" y="152" width="1200" height="32" fill="rgba(255,255,255,0.03)"/>
+  <text x="72" y="173" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.15em">NOME</text>
+  <text x="310" y="173" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.15em">CATEGORIA</text>
+  <text x="570" y="173" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.15em" text-anchor="end">VALOR</text>
+  <text x="620" y="173" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.15em">VENC.</text>
+  <text x="740" y="173" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.15em">RESPONSÁVEL</text>
+  <text x="920" y="173" fill="#64748b" font-size="9.5" font-weight="600" letter-spacing="0.15em">STATUS</text>
+  <line x1="56" y1="184" x2="1224" y2="184" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Row 1: Aluguel — Pago -->
+  <text x="72" y="210" fill="#e5eefc" font-size="13" font-weight="500">Aluguel</text>
+  <rect x="300" y="197" width="68" height="20" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="315" y="211" fill="#94a3b8" font-size="10.5">Moradia</text>
+  <text x="570" y="211" fill="#38bdf8" font-size="14" font-weight="600" text-anchor="end" filter="url(#glow)">R$ 2.800,00</text>
+  <text x="620" y="210" fill="#94a3b8" font-size="12">05/04</text>
+  <!-- Avatar -->
+  <circle cx="752" cy="206" r="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="752" y="210" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">E</text>
+  <text x="770" y="210" fill="#94a3b8" font-size="12">Eduardo</text>
+  <!-- Status badge paid -->
+  <rect x="910" y="197" width="56" height="20" rx="10" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="923" cy="207" r="3.5" fill="#34d399"/>
+  <text x="932" y="211" fill="#34d399" font-size="10.5" font-weight="500">Pago</text>
+  <!-- Chevron -->
+  <text x="1200" y="211" fill="#64748b" font-size="14">›</text>
+  <line x1="56" y1="224" x2="1224" y2="224" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Row 2: Condomínio — Pago -->
+  <text x="72" y="250" fill="#e5eefc" font-size="13" font-weight="500">Condomínio</text>
+  <rect x="300" y="237" width="68" height="20" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="315" y="251" fill="#94a3b8" font-size="10.5">Moradia</text>
+  <text x="570" y="251" fill="#38bdf8" font-size="14" font-weight="600" text-anchor="end">R$ 650,00</text>
+  <text x="620" y="250" fill="#94a3b8" font-size="12">05/04</text>
+  <circle cx="752" cy="246" r="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="752" y="250" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">E</text>
+  <text x="770" y="250" fill="#94a3b8" font-size="12">Eduardo</text>
+  <rect x="910" y="237" width="56" height="20" rx="10" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="923" cy="247" r="3.5" fill="#34d399"/>
+  <text x="932" y="251" fill="#34d399" font-size="10.5" font-weight="500">Pago</text>
+  <text x="1200" y="251" fill="#64748b" font-size="14">›</text>
+  <line x1="56" y1="264" x2="1224" y2="264" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Row 3: Internet — Parcial (EXPANDED highlight) -->
+  <rect x="48" y="270" width="1184" height="40" rx="4" fill="rgba(255,255,255,0.06)"/>
+  <text x="72" y="296" fill="#e5eefc" font-size="13" font-weight="500">Internet</text>
+  <rect x="300" y="283" width="80" height="20" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="315" y="297" fill="#94a3b8" font-size="10.5">Utilidades</text>
+  <text x="570" y="297" fill="#38bdf8" font-size="14" font-weight="600" text-anchor="end">R$ 189,00</text>
+  <text x="620" y="296" fill="#94a3b8" font-size="12">10/04</text>
+  <circle cx="752" cy="292" r="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="752" y="296" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">E</text>
+  <text x="770" y="296" fill="#94a3b8" font-size="12">Eduardo</text>
+  <rect x="910" y="283" width="68" height="20" rx="10" fill="rgba(251,191,36,0.12)"/>
+  <circle cx="923" cy="293" r="3.5" fill="#fbbf24"/>
+  <text x="932" y="297" fill="#fbbf24" font-size="10.5" font-weight="500">Parcial</text>
+  <text x="1200" y="297" fill="#94a3b8" font-size="14" style="transform:rotate(90deg);transform-origin:1200px 293px">›</text>
+
+  <!-- Expanded detail sub-row -->
+  <rect x="48" y="311" width="1184" height="34" rx="0" fill="rgba(255,255,255,0.02)"/>
+  <text x="88" y="333" fill="#64748b" font-size="10.5">Fixo: <tspan fill="#94a3b8">Sim</tspan></text>
+  <text x="200" y="333" fill="#64748b" font-size="10.5">Pago parcial: <tspan fill="#fbbf24">R$ 100,00</tspan></text>
+  <text x="400" y="333" fill="#64748b" font-size="10.5">Pagou: <tspan fill="#94a3b8">Eduardo · 12/03</tspan></text>
+  <text x="640" y="333" fill="#475569" font-size="10.5" font-style="italic">"Desconto no débito automático"</text>
+  <!-- Buttons -->
+  <rect x="960" y="319" width="52" height="22" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <text x="972" y="334" fill="#94a3b8" font-size="10">Editar</text>
+  <rect x="1020" y="319" width="68" height="22" rx="6" fill="rgba(251,113,133,0.1)" stroke="rgba(251,113,133,0.2)" stroke-width="0.5"/>
+  <text x="1032" y="334" fill="#fb7185" font-size="10">Remover</text>
+  <line x1="56" y1="348" x2="1224" y2="348" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Row 4: Mercado — Pendente -->
+  <text x="72" y="374" fill="#e5eefc" font-size="13" font-weight="500">Mercado</text>
+  <rect x="300" y="361" width="92" height="20" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="315" y="375" fill="#94a3b8" font-size="10.5">Alimentação</text>
+  <text x="570" y="375" fill="#38bdf8" font-size="14" font-weight="600" text-anchor="end">R$ 1.200,00</text>
+  <text x="620" y="374" fill="#94a3b8" font-size="12">—</text>
+  <circle cx="752" cy="370" r="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="752" y="374" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">A</text>
+  <text x="770" y="374" fill="#94a3b8" font-size="12">Ana</text>
+  <rect x="910" y="361" width="74" height="20" rx="10" fill="rgba(71,85,105,0.2)"/>
+  <circle cx="923" cy="371" r="3.5" fill="#475569"/>
+  <text x="932" y="375" fill="#475569" font-size="10.5" font-weight="500">Pendente</text>
+  <text x="1200" y="375" fill="#64748b" font-size="14">›</text>
+  <line x1="56" y1="388" x2="1224" y2="388" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Row 5: Energia — Pago -->
+  <text x="72" y="414" fill="#e5eefc" font-size="13" font-weight="500">Energia</text>
+  <rect x="300" y="401" width="80" height="20" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="315" y="415" fill="#94a3b8" font-size="10.5">Utilidades</text>
+  <text x="570" y="415" fill="#38bdf8" font-size="14" font-weight="600" text-anchor="end">R$ 250,00</text>
+  <text x="620" y="414" fill="#94a3b8" font-size="12">15/04</text>
+  <circle cx="752" cy="410" r="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="752" y="414" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">A</text>
+  <text x="770" y="414" fill="#94a3b8" font-size="12">Ana</text>
+  <rect x="910" y="401" width="56" height="20" rx="10" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="923" cy="411" r="3.5" fill="#34d399"/>
+  <text x="932" y="415" fill="#34d399" font-size="10.5" font-weight="500">Pago</text>
+  <text x="1200" y="415" fill="#64748b" font-size="14">›</text>
+  <line x1="56" y1="428" x2="1224" y2="428" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Row 6: iFood — Pendente -->
+  <text x="72" y="454" fill="#e5eefc" font-size="13" font-weight="500">iFood</text>
+  <rect x="300" y="441" width="92" height="20" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="315" y="455" fill="#94a3b8" font-size="10.5">Alimentação</text>
+  <text x="570" y="455" fill="#38bdf8" font-size="14" font-weight="600" text-anchor="end">R$ 600,00</text>
+  <text x="620" y="454" fill="#94a3b8" font-size="12">—</text>
+  <circle cx="752" cy="450" r="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="752" y="454" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">E</text>
+  <text x="770" y="454" fill="#94a3b8" font-size="12">Eduardo</text>
+  <rect x="910" y="441" width="74" height="20" rx="10" fill="rgba(71,85,105,0.2)"/>
+  <circle cx="923" cy="451" r="3.5" fill="#475569"/>
+  <text x="932" y="455" fill="#475569" font-size="10.5" font-weight="500">Pendente</text>
+  <text x="1200" y="455" fill="#64748b" font-size="14">›</text>
+  <line x1="56" y1="468" x2="1224" y2="468" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Row 7: Plano de Saúde — Parcial -->
+  <text x="72" y="494" fill="#e5eefc" font-size="13" font-weight="500">Plano de Saúde</text>
+  <rect x="300" y="481" width="56" height="20" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="312" y="495" fill="#94a3b8" font-size="10.5">Saúde</text>
+  <text x="570" y="495" fill="#38bdf8" font-size="14" font-weight="600" text-anchor="end">R$ 1.350,00</text>
+  <text x="620" y="494" fill="#94a3b8" font-size="12">20/04</text>
+  <circle cx="752" cy="490" r="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="752" y="494" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">E</text>
+  <text x="770" y="494" fill="#94a3b8" font-size="12">Eduardo</text>
+  <rect x="910" y="481" width="68" height="20" rx="10" fill="rgba(251,191,36,0.12)"/>
+  <circle cx="923" cy="491" r="3.5" fill="#fbbf24"/>
+  <text x="932" y="495" fill="#fbbf24" font-size="10.5" font-weight="500">Parcial</text>
+  <text x="1200" y="495" fill="#64748b" font-size="14">›</text>
+  <line x1="56" y1="508" x2="1224" y2="508" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+  <!-- Row 8: Água — Pago -->
+  <text x="72" y="534" fill="#e5eefc" font-size="13" font-weight="500">Água</text>
+  <rect x="300" y="521" width="80" height="20" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="315" y="535" fill="#94a3b8" font-size="10.5">Utilidades</text>
+  <text x="570" y="535" fill="#38bdf8" font-size="14" font-weight="600" text-anchor="end">R$ 150,00</text>
+  <text x="620" y="534" fill="#94a3b8" font-size="12">20/04</text>
+  <circle cx="752" cy="530" r="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="752" y="534" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">E</text>
+  <text x="770" y="534" fill="#94a3b8" font-size="12">Eduardo</text>
+  <rect x="910" y="521" width="56" height="20" rx="10" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="923" cy="531" r="3.5" fill="#34d399"/>
+  <text x="932" y="535" fill="#34d399" font-size="10.5" font-weight="500">Pago</text>
+  <text x="1200" y="535" fill="#64748b" font-size="14">›</text>
+  <line x1="56" y1="550" x2="1224" y2="550" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Add item -->
+  <text x="80" y="578" fill="#38bdf8" font-size="13" font-weight="500">+ Adicionar item</text>
+
+  <!-- Legend -->
+  <rect x="48" y="620" width="1184" height="48" rx="12" fill="rgba(56,189,248,0.04)" stroke="rgba(56,189,248,0.1)" stroke-width="0.5"/>
+  <text x="72" y="649" fill="#94a3b8" font-size="11"><tspan fill="#38bdf8" font-weight="600">Opção A — Inline Row:</tspan> Máxima densidade (~48px/item). Colunas fixas para comparação vertical. Expand-on-click para edição. Trade-off: menor respiro visual.</text>
+</svg>

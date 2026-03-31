@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 880" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="glassBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0a1220" stop-opacity="0.65"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="880" fill="#08111f"/>
+
+  <!-- Title -->
+  <rect x="40" y="18" width="120" height="22" rx="11" fill="rgba(52,211,153,0.12)"/>
+  <text x="56" y="33" fill="#34d399" font-size="9" font-weight="600" letter-spacing="0.06em">OPÇÃO B — REC.</text>
+  <text x="48" y="66" fill="#e5eefc" font-size="22" font-weight="700">Card Compacto com Hierarquia</text>
+
+  <!-- Accordion surface -->
+  <rect x="40" y="90" width="1200" height="756" rx="24" fill="url(#glassBg)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+
+  <!-- Accordion header -->
+  <text x="72" y="128" fill="#e5eefc" font-size="17" font-weight="600">Gastos mensais</text>
+  <rect x="210" y="114" width="52" height="22" rx="11" fill="rgba(56,189,248,0.15)"/>
+  <text x="220" y="129" fill="#38bdf8" font-size="10" font-weight="600">8 itens</text>
+  <text x="1170" y="128" fill="#38bdf8" font-size="16" font-weight="700" text-anchor="end">R$ 8.239,00</text>
+  <line x1="56" y1="146" x2="1224" y2="146" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Card 1: Aluguel — Pago (border-left emerald) -->
+  <rect x="60" y="162" width="1160" height="72" rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <rect x="60" y="162" width="3" height="72" rx="1.5" fill="#34d399"/>
+  <!-- Header line -->
+  <text x="88" y="192" fill="#e5eefc" font-size="14" font-weight="600">Aluguel</text>
+  <!-- Status badge -->
+  <rect x="870" y="179" width="56" height="20" rx="10" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="883" cy="189" r="3.5" fill="#34d399"/>
+  <text x="892" y="193" fill="#34d399" font-size="10.5" font-weight="500">Pago</text>
+  <!-- Value -->
+  <text x="1188" y="193" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="end" filter="url(#glow)">R$ 2.800,00</text>
+  <!-- Meta line -->
+  <text x="88" y="218" fill="#64748b" font-size="11">Moradia <tspan fill="#475569" font-size="9">·</tspan> Eduardo <tspan fill="#475569" font-size="9">·</tspan> Venc. 05/04 <tspan fill="#475569" font-size="9">·</tspan> <tspan fill="#94a3b8">Fixo</tspan></text>
+
+  <!-- Card 2: Condomínio — Pago -->
+  <rect x="60" y="244" width="1160" height="72" rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <rect x="60" y="244" width="3" height="72" rx="1.5" fill="#34d399"/>
+  <text x="88" y="274" fill="#e5eefc" font-size="14" font-weight="600">Condomínio</text>
+  <rect x="870" y="261" width="56" height="20" rx="10" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="883" cy="271" r="3.5" fill="#34d399"/>
+  <text x="892" y="275" fill="#34d399" font-size="10.5" font-weight="500">Pago</text>
+  <text x="1188" y="275" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="end">R$ 650,00</text>
+  <text x="88" y="300" fill="#64748b" font-size="11">Moradia <tspan fill="#475569" font-size="9">·</tspan> Eduardo <tspan fill="#475569" font-size="9">·</tspan> Venc. 05/04 <tspan fill="#475569" font-size="9">·</tspan> <tspan fill="#94a3b8">Fixo</tspan></text>
+
+  <!-- Card 3: Internet — Parcial (EXPANDED) -->
+  <rect x="60" y="326" width="1160" height="120" rx="20" fill="rgba(255,255,255,0.06)" stroke="rgba(56,189,248,0.2)" stroke-width="1"/>
+  <rect x="60" y="326" width="3" height="120" rx="1.5" fill="#f59e0b"/>
+  <!-- Header -->
+  <text x="88" y="356" fill="#e5eefc" font-size="14" font-weight="600">Internet</text>
+  <rect x="830" y="343" width="96" height="20" rx="10" fill="rgba(251,191,36,0.12)"/>
+  <circle cx="843" cy="353" r="3.5" fill="#fbbf24"/>
+  <text x="852" y="357" fill="#fbbf24" font-size="10.5" font-weight="500">Parcial · R$ 100</text>
+  <text x="1188" y="357" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="end">R$ 189,00</text>
+  <!-- Meta -->
+  <text x="88" y="380" fill="#64748b" font-size="11">Utilidades <tspan fill="#475569" font-size="9">·</tspan> Eduardo <tspan fill="#475569" font-size="9">·</tspan> Venc. 10/04 <tspan fill="#475569" font-size="9">·</tspan> <tspan fill="#94a3b8">Fixo</tspan></text>
+  <!-- Divider -->
+  <line x1="80" y1="394" x2="1200" y2="394" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <!-- Edit fields row -->
+  <rect x="88" y="404" width="200" height="28" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+  <text x="100" y="422" fill="#e5eefc" font-size="11">Internet</text>
+  <rect x="296" y="404" width="160" height="28" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+  <text x="308" y="422" fill="#94a3b8" font-size="11">Utilidades</text>
+  <rect x="464" y="404" width="110" height="28" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+  <text x="530" y="422" fill="#e5eefc" font-size="11" text-anchor="end">189.00</text>
+  <rect x="582" y="404" width="120" height="28" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+  <text x="594" y="422" fill="#94a3b8" font-size="11">2026-04-10</text>
+  <!-- Save button -->
+  <rect x="710" y="404" width="60" height="28" rx="8" fill="#0f8ea2"/>
+  <text x="726" y="422" fill="white" font-size="11" font-weight="600">Salvar</text>
+
+  <!-- Card 4: Mercado — Pendente -->
+  <rect x="60" y="458" width="1160" height="72" rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <rect x="60" y="458" width="3" height="72" rx="1.5" fill="#334155"/>
+  <text x="88" y="488" fill="#e5eefc" font-size="14" font-weight="600">Mercado</text>
+  <rect x="870" y="475" width="74" height="20" rx="10" fill="rgba(71,85,105,0.2)"/>
+  <circle cx="883" cy="485" r="3.5" fill="#475569"/>
+  <text x="892" y="489" fill="#475569" font-size="10.5" font-weight="500">Pendente</text>
+  <text x="1188" y="489" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="end">R$ 1.200,00</text>
+  <text x="88" y="514" fill="#64748b" font-size="11">Alimentação <tspan fill="#475569" font-size="9">·</tspan> Ana <tspan fill="#475569" font-size="9">·</tspan> Sem vencimento</text>
+
+  <!-- Card 5: Energia — Pago -->
+  <rect x="60" y="540" width="1160" height="72" rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <rect x="60" y="540" width="3" height="72" rx="1.5" fill="#34d399"/>
+  <text x="88" y="570" fill="#e5eefc" font-size="14" font-weight="600">Energia</text>
+  <rect x="870" y="557" width="56" height="20" rx="10" fill="rgba(52,211,153,0.12)"/>
+  <circle cx="883" cy="567" r="3.5" fill="#34d399"/>
+  <text x="892" y="571" fill="#34d399" font-size="10.5" font-weight="500">Pago</text>
+  <text x="1188" y="571" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="end">R$ 250,00</text>
+  <text x="88" y="596" fill="#64748b" font-size="11">Utilidades <tspan fill="#475569" font-size="9">·</tspan> Ana <tspan fill="#475569" font-size="9">·</tspan> Venc. 15/04 <tspan fill="#475569" font-size="9">·</tspan> <tspan fill="#94a3b8">Fixo</tspan></text>
+
+  <!-- Card 6: iFood — Pendente -->
+  <rect x="60" y="622" width="1160" height="72" rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <rect x="60" y="622" width="3" height="72" rx="1.5" fill="#334155"/>
+  <text x="88" y="652" fill="#e5eefc" font-size="14" font-weight="600">iFood</text>
+  <rect x="870" y="639" width="74" height="20" rx="10" fill="rgba(71,85,105,0.2)"/>
+  <circle cx="883" cy="649" r="3.5" fill="#475569"/>
+  <text x="892" y="653" fill="#475569" font-size="10.5" font-weight="500">Pendente</text>
+  <text x="1188" y="653" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="end">R$ 600,00</text>
+  <text x="88" y="678" fill="#64748b" font-size="11">Alimentação <tspan fill="#475569" font-size="9">·</tspan> Eduardo <tspan fill="#475569" font-size="9">·</tspan> Sem vencimento</text>
+
+  <!-- Card 7: Plano de Saúde — Parcial -->
+  <rect x="60" y="704" width="1160" height="72" rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <rect x="60" y="704" width="3" height="72" rx="1.5" fill="#f59e0b"/>
+  <text x="88" y="734" fill="#e5eefc" font-size="14" font-weight="600">Plano de Saúde</text>
+  <rect x="830" y="721" width="96" height="20" rx="10" fill="rgba(251,191,36,0.12)"/>
+  <circle cx="843" cy="731" r="3.5" fill="#fbbf24"/>
+  <text x="852" y="735" fill="#fbbf24" font-size="10.5" font-weight="500">Parcial · R$ 800</text>
+  <text x="1188" y="735" fill="#38bdf8" font-size="17" font-weight="700" text-anchor="end">R$ 1.350,00</text>
+  <text x="88" y="760" fill="#64748b" font-size="11">Saúde <tspan fill="#475569" font-size="9">·</tspan> Eduardo <tspan fill="#475569" font-size="9">·</tspan> Venc. 20/04 <tspan fill="#475569" font-size="9">·</tspan> <tspan fill="#94a3b8">Fixo</tspan></text>
+
+  <!-- Add card (dashed) -->
+  <rect x="60" y="786" width="1160" height="42" rx="20" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="640" y="812" fill="#38bdf8" font-size="13" font-weight="500" text-anchor="middle">+ Adicionar item</text>
+
+  <!-- Legend -->
+  <rect x="48" y="844" width="1184" height="28" rx="12" fill="rgba(52,211,153,0.04)" stroke="rgba(52,211,153,0.1)" stroke-width="0.5"/>
+  <text x="72" y="863" fill="#94a3b8" font-size="10.5"><tspan fill="#34d399" font-weight="600">Opção B — Recomendada:</tspan> Equilíbrio clareza/densidade (~72px/item). Borda left = status. Valor em cyan como âncora. Ações on-hover. Funciona de 3 a 15 itens.</text>
+</svg>

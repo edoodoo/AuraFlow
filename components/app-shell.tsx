@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, CalendarDays, LayoutDashboard, LogOut, Menu, ReceiptText, Scale, Tags, X } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
@@ -24,26 +24,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [rebalancingAllowed, setRebalancingAllowed] = useState(false);
   const [isStandalonePwa, setIsStandalonePwa] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const headerRef = useRef<HTMLElement | null>(null);
-  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
-
-  const debugLog = (hypothesisId: string, location: string, message: string, data: Record<string, unknown>) => {
-    // #region agent log
-    fetch("http://127.0.0.1:7523/ingest/511b69e4-c6c0-4d1e-a391-0b0a3aa1b688", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "3c2895" },
-      body: JSON.stringify({
-        sessionId: "3c2895",
-        runId: "pre-fix",
-        hypothesisId,
-        location,
-        message,
-        data,
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  };
 
   useEffect(() => {
     fetch("/api/rebalancing/access")
@@ -56,14 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
     const updateStandaloneState = () => {
       const iosStandalone = "standalone" in window.navigator && window.navigator.standalone === true;
-      const nextStandalone = mediaQuery.matches || iosStandalone;
-      debugLog("H3", "components/app-shell.tsx:42", "standalone-state-evaluated", {
-        pathname,
-        mediaQueryMatches: mediaQuery.matches,
-        iosStandalone,
-        nextStandalone,
-      });
-      setIsStandalonePwa(nextStandalone);
+      setIsStandalonePwa(mediaQuery.matches || iosStandalone);
     };
 
     updateStandaloneState();
@@ -75,66 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     mediaQuery.addListener(updateStandaloneState);
     return () => mediaQuery.removeListener(updateStandaloneState);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (!isStandalonePwa) return;
-
-    const measureHeader = () => {
-      const headerRect = headerRef.current?.getBoundingClientRect();
-      const menuRect = menuButtonRef.current?.getBoundingClientRect();
-      debugLog("H1", "components/app-shell.tsx:69", "header-layout-snapshot", {
-        pathname,
-        isMobileMenuOpen,
-        innerWidth: window.innerWidth,
-        innerHeight: window.innerHeight,
-        visualViewportHeight: window.visualViewport?.height ?? null,
-        visualViewportOffsetTop: window.visualViewport?.offsetTop ?? null,
-        headerTop: headerRect?.top ?? null,
-        headerHeight: headerRect?.height ?? null,
-        menuTop: menuRect?.top ?? null,
-        menuBottom: menuRect?.bottom ?? null,
-        menuRight: menuRect?.right ?? null,
-      });
-    };
-
-    measureHeader();
-    window.addEventListener("resize", measureHeader);
-    window.visualViewport?.addEventListener("resize", measureHeader);
-
-    return () => {
-      window.removeEventListener("resize", measureHeader);
-      window.visualViewport?.removeEventListener("resize", measureHeader);
-    };
-  }, [isMobileMenuOpen, isStandalonePwa, pathname]);
-
-  useEffect(() => {
-    if (!isStandalonePwa) return;
-
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target instanceof HTMLElement ? event.target : null;
-      if (event.clientY > 120) return;
-
-      debugLog("H2", "components/app-shell.tsx:96", "top-pointerdown-captured", {
-        pathname,
-        clientX: event.clientX,
-        clientY: event.clientY,
-        targetTag: target?.tagName ?? null,
-        targetAriaLabel: target?.getAttribute("aria-label") ?? null,
-        targetText: target?.textContent?.trim().slice(0, 40) ?? null,
-        elementFromPoint:
-          document.elementFromPoint(event.clientX, event.clientY) instanceof HTMLElement
-            ? {
-                tag: (document.elementFromPoint(event.clientX, event.clientY) as HTMLElement).tagName,
-                ariaLabel: (document.elementFromPoint(event.clientX, event.clientY) as HTMLElement).getAttribute("aria-label"),
-              }
-            : null,
-      });
-    };
-
-    window.addEventListener("pointerdown", onPointerDown, true);
-    return () => window.removeEventListener("pointerdown", onPointerDown, true);
-  }, [isStandalonePwa, pathname]);
+  }, []);
 
   useEffect(() => {
     if (!isStandalonePwa || !isMobileMenuOpen) return;
@@ -168,7 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={["dark min-h-screen text-slate-100 md:pb-10", isStandalonePwa ? "pb-6" : "pb-24"].join(" ")}>
-      <header ref={headerRef} className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
         <div className="safe-top-offset mx-auto flex w-full max-w-[1760px] items-center justify-between gap-4 px-4 py-4 sm:px-6 xl:px-8 2xl:px-10">
           <BrandMark dark />
           <div className="hidden items-center gap-3 md:flex">
@@ -188,34 +102,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
             {isStandalonePwa ? (
               <button
-                ref={menuButtonRef}
                 type="button"
                 aria-label={isMobileMenuOpen ? "Fechar navegação" : "Abrir navegação"}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-pwa-drawer"
-                onPointerDown={(event) => {
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  debugLog("H4", "components/app-shell.tsx:164", "menu-pointerdown", {
-                    pathname,
-                    clientX: event.clientX,
-                    clientY: event.clientY,
-                    rectTop: rect.top,
-                    rectBottom: rect.bottom,
-                    rectRight: rect.right,
-                    isMobileMenuOpen,
-                  });
-                }}
-                onClick={() => {
-                  const rect = menuButtonRef.current?.getBoundingClientRect();
-                  debugLog("H4", "components/app-shell.tsx:176", "menu-click", {
-                    pathname,
-                    rectTop: rect?.top ?? null,
-                    rectBottom: rect?.bottom ?? null,
-                    rectRight: rect?.right ?? null,
-                    isMobileMenuOpenBeforeClick: isMobileMenuOpen,
-                  });
-                  setIsMobileMenuOpen((current) => !current);
-                }}
+                onClick={() => setIsMobileMenuOpen((current) => !current)}
                 className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-100 transition hover:bg-white/10"
               >
                 {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}

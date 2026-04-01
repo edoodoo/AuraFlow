@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   applicationName: "AuraFlow",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "AuraFlow",
   },
   formatDetection: {

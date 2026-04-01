@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpDown, Camera, EllipsisVertical, Link2, Pencil, PlusCircle, ReceiptText, Save, Trash2, Wallet, X } from "lucide-react";
+import { ArrowUpDown, CalendarRange, Camera, EllipsisVertical, Link2, Pencil, PlusCircle, ReceiptText, Save, Trash2, Wallet, X } from "lucide-react";
 import { CategoryCombobox } from "@/components/category-combobox";
 import type { LinkedPaymentLine, TransactionFeedEntry, TransactionListRow } from "@/lib/transactions-list";
 
@@ -49,6 +49,24 @@ function paymentLineToTransaction(
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
+const now = new Date();
+const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+function getMonthDateRange(month: number, year: number) {
+  const monthToken = String(month).padStart(2, "0");
+  const lastDay = String(new Date(year, month, 0).getDate()).padStart(2, "0");
+  return {
+    dateFrom: `${year}-${monthToken}-01`,
+    dateTo: `${year}-${monthToken}-${lastDay}`,
+  };
+}
+
+function getDefaultTransactionDate(month: number, year: number) {
+  const isCurrentMonth = month === now.getMonth() + 1 && year === now.getFullYear();
+  if (isCurrentMonth) return new Date().toISOString().slice(0, 10);
+  return `${year}-${String(month).padStart(2, "0")}-01`;
+}
+
 function getPlanItemSelectStatusLabel(item: PlanItem) {
   if (item.status === "paid") return "PAGO";
   if (item.status === "partial") return `parcial - pago ${formatCurrency(item.paid_amount)}`;
@@ -69,6 +87,8 @@ type Notice = {
 
 export default function TransactionsPage() {
   const pageSize = 10;
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
   const [categories, setCategories] = useState<Category[]>([]);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
   const [feed, setFeed] = useState<TransactionFeedEntry[]>([]);
@@ -82,7 +102,7 @@ export default function TransactionsPage() {
     category_id: "",
     amount: "",
     description: "",
-    transaction_date: new Date().toISOString().slice(0, 10),
+    transaction_date: getDefaultTransactionDate(now.getMonth() + 1, now.getFullYear()),
   });
   const [receipt, setReceipt] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,15 +130,28 @@ export default function TransactionsPage() {
   const sortLabel = sortDirection === "desc" ? "Mais recentes" : "Mais antigas";
   const showingFrom = totalEntries === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const showingTo = totalEntries === 0 ? 0 : Math.min(currentPage * pageSize, totalEntries);
+  const selectedPeriodLabel = `${monthLabels[month - 1]} de ${year}`;
+  const { dateFrom, dateTo } = useMemo(() => getMonthDateRange(month, year), [month, year]);
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
+      const transactionParams = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(pageSize),
+        sort: sortDirection,
+        date_from: dateFrom,
+        date_to: dateTo,
+      });
+      const monthlyPlanParams = new URLSearchParams({
+        month: String(month),
+        year: String(year),
+      });
       const [cRes, tRes, planRes] = await Promise.all([
         fetch("/api/categories", { cache: "no-store" }),
-        fetch(`/api/transactions?page=${currentPage}&limit=${pageSize}&sort=${sortDirection}`, { cache: "no-store" }),
-        fetch("/api/monthly-plan", { cache: "no-store" }),
+        fetch(`/api/transactions?${transactionParams.toString()}`, { cache: "no-store" }),
+        fetch(`/api/monthly-plan?${monthlyPlanParams.toString()}`, { cache: "no-store" }),
       ]);
       if (!cRes.ok || !tRes.ok || !planRes.ok) throw new Error("Falha ao carregar.");
       const [cData, tData, planData] = await Promise.all([cRes.json(), tRes.json(), planRes.json()]);
@@ -141,7 +174,19 @@ export default function TransactionsPage() {
   useEffect(() => {
     void loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortDirection, currentPage]);
+  }, [sortDirection, currentPage, month, year]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      monthly_plan_item_id: "",
+      description: prev.transaction_kind === "linked_plan_item" ? "" : prev.description,
+      transaction_date: getDefaultTransactionDate(month, year),
+    }));
+    setActiveMenuId(null);
+    setPendingDeleteId(null);
+    setHistoryNotice(null);
+  }, [month, year]);
 
   useEffect(() => {
     if (form.transaction_kind !== "linked_plan_item" || !selectedPlanItem || selectedPlanItem.status !== "paid") return;
@@ -265,6 +310,12 @@ export default function TransactionsPage() {
     } else {
       setCurrentPage(1);
     }
+  };
+
+  const updatePeriod = (nextMonth: number, nextYear: number) => {
+    setCurrentPage(1);
+    setMonth(nextMonth);
+    setYear(nextYear);
   };
 
   return (
@@ -409,12 +460,37 @@ export default function TransactionsPage() {
         </div>
 
         <div className="glass-surface p-5 sm:p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="soft-label text-slate-400">Histórico recente</div>
+              <div className="soft-label text-slate-400">Histórico do período</div>
               <h2 className="mt-2 text-2xl font-semibold text-white">Últimos lançamentos</h2>
             </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:w-[360px]">
+              <select
+                value={month}
+                onChange={(e) => updatePeriod(Number(e.target.value), year)}
+                aria-label="Selecionar mês do histórico"
+              >
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {monthLabels[i]}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={year}
+                onChange={(e) => updatePeriod(month, Number(e.target.value))}
+                aria-label="Selecionar ano do histórico"
+              />
+            </div>
+          </div>
+          <div className="mb-4 flex flex-col gap-3 rounded-[1.4rem] border border-white/10 bg-white/5 p-3 text-xs text-slate-300 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
+              <CalendarRange size={16} className="text-cyan-300" />
+              Analisando {selectedPeriodLabel}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -456,7 +532,12 @@ export default function TransactionsPage() {
           )}
           <AnimatePresence>
             <div className="space-y-3">
-              {feed.map((entry) => {
+              {!loading && feed.length === 0 ? (
+                <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-slate-950/20 p-5 text-sm text-slate-400">
+                  Nenhum lançamento encontrado em {selectedPeriodLabel}.
+                </div>
+              ) : (
+                feed.map((entry) => {
                 if (entry.kind === "linked_aggregate") {
                   const linkedPlanItem = planItemById.get(entry.monthly_plan_item_id) ?? null;
                   const isPartialLinkedPayment = linkedPlanItem?.status === "partial";
@@ -999,7 +1080,8 @@ export default function TransactionsPage() {
                     )}
                   </motion.div>
                 );
-              })}
+                })
+              )}
             </div>
           </AnimatePresence>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

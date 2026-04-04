@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CalendarRange, Check, Link2, Pencil, Plus, ReceiptText, RefreshCw, Trash2 } from "lucide-react";
 import { AccordionSection } from "@/components/accordion-section";
 import { CategoryCombobox } from "@/components/category-combobox";
+import { derivePlanItemPaymentPhase } from "@/lib/monthly-plan";
 
 type Category = {
   id: string;
@@ -133,7 +134,9 @@ function formatShortDueDate(value: string | null) {
 }
 
 function getPaymentStatusConfig(item: PlanItem) {
-  if (item.status === "paid") {
+  const phase = derivePlanItemPaymentPhase(item);
+
+  if (phase === "paid") {
     return {
       label: "Pago",
       borderClass: "border-l-emerald-400",
@@ -142,7 +145,7 @@ function getPaymentStatusConfig(item: PlanItem) {
     };
   }
 
-  if (item.status === "partial") {
+  if (phase === "partial") {
     return {
       label: `Parcial · ${formatCurrency(item.paid_amount)}`,
       borderClass: "border-l-amber-500",

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpDown, CalendarRange, Camera, EllipsisVertical, Link2, Pencil, PlusCircle, ReceiptText, Save, Trash2, Wallet, X } from "lucide-react";
 import { CategoryCombobox } from "@/components/category-combobox";
+import { derivePlanItemPaymentPhase } from "@/lib/monthly-plan";
 import type { LinkedPaymentLine, TransactionFeedEntry, TransactionListRow } from "@/lib/transactions-list";
 
 type Category = { id: string; name: string };
@@ -68,8 +69,9 @@ function getDefaultTransactionDate(month: number, year: number) {
 }
 
 function getPlanItemSelectStatusLabel(item: PlanItem) {
-  if (item.status === "paid") return "PAGO";
-  if (item.status === "partial") return `parcial - pago ${formatCurrency(item.paid_amount)}`;
+  const phase = derivePlanItemPaymentPhase(item);
+  if (phase === "paid") return "PAGO";
+  if (phase === "partial") return `parcial - pago ${formatCurrency(item.paid_amount)}`;
   return "pendente";
 }
 
@@ -116,7 +118,7 @@ export default function TransactionsPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [historyNotice, setHistoryNotice] = useState<Notice | null>(null);
   const selectedPlanItem = planItems.find((item) => item.id === form.monthly_plan_item_id) ?? null;
-  const hasPaidPlanItems = planItems.some((item) => item.status === "paid");
+  const hasPaidPlanItems = planItems.some((item) => derivePlanItemPaymentPhase(item) === "paid");
   const categoryOptions = useMemo(
     () =>
       categories.map((category) => ({
@@ -189,7 +191,12 @@ export default function TransactionsPage() {
   }, [month, year]);
 
   useEffect(() => {
-    if (form.transaction_kind !== "linked_plan_item" || !selectedPlanItem || selectedPlanItem.status !== "paid") return;
+    if (
+      form.transaction_kind !== "linked_plan_item" ||
+      !selectedPlanItem ||
+      derivePlanItemPaymentPhase(selectedPlanItem) !== "paid"
+    )
+      return;
 
     setForm((prev) => ({
       ...prev,
@@ -281,7 +288,11 @@ export default function TransactionsPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (form.transaction_kind === "linked_plan_item" && selectedPlanItem?.status === "paid") {
+    if (
+      form.transaction_kind === "linked_plan_item" &&
+      selectedPlanItem &&
+      derivePlanItemPaymentPhase(selectedPlanItem) === "paid"
+    ) {
       setError("Este item do mensal já está pago. Para registrar valor extra, use Gasto avulso.");
       return;
     }
@@ -373,7 +384,7 @@ export default function TransactionsPage() {
                 >
                   <option value="">Selecione um item do mensal</option>
                   {planItems.map((item) => (
-                    <option key={item.id} value={item.id} disabled={item.status === "paid"}>
+                    <option key={item.id} value={item.id} disabled={derivePlanItemPaymentPhase(item) === "paid"}>
                       {item.title} · {formatCurrency(item.expected_amount)} · {getPlanItemSelectStatusLabel(item)}
                     </option>
                   ))}
@@ -540,7 +551,8 @@ export default function TransactionsPage() {
                 feed.map((entry) => {
                 if (entry.kind === "linked_aggregate") {
                   const linkedPlanItem = planItemById.get(entry.monthly_plan_item_id) ?? null;
-                  const isPartialLinkedPayment = linkedPlanItem?.status === "partial";
+                  const isPartialLinkedPayment =
+                    linkedPlanItem != null && derivePlanItemPaymentPhase(linkedPlanItem) === "partial";
                   const totalPaid = entry.payments.reduce((sum, p) => sum + p.amount, 0);
                   const planTitle = entry.plan_item
                     ? Array.isArray(entry.plan_item)
@@ -592,7 +604,16 @@ export default function TransactionsPage() {
                             )}
                           </div>
                         </div>
-                        <span className="text-base font-semibold text-white">{formatCurrency(totalPaid)}</span>
+                        <div className="text-right">
+                          <div className="text-base font-semibold text-white">
+                            {linkedPlanItem
+                              ? `${formatCurrency(totalPaid)} de ${formatCurrency(linkedPlanItem.expected_amount)}`
+                              : formatCurrency(totalPaid)}
+                          </div>
+                          {linkedPlanItem ? (
+                            <div className="mt-0.5 text-[0.7rem] text-slate-400">Pago do previsto no mensal</div>
+                          ) : null}
+                        </div>
                       </div>
 
                       <ul className="mt-4 space-y-2 border-t border-white/10 pt-3">
@@ -828,7 +849,8 @@ export default function TransactionsPage() {
 
                 const t = entry.transaction;
                 const linkedPlanItem = t.monthly_plan_item_id ? planItemById.get(t.monthly_plan_item_id) ?? null : null;
-                const isPartialLinkedPayment = linkedPlanItem?.status === "partial";
+                const isPartialLinkedPayment =
+                  linkedPlanItem != null && derivePlanItemPaymentPhase(linkedPlanItem) === "partial";
 
                 return (
                   <motion.div

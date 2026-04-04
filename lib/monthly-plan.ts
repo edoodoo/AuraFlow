@@ -236,6 +236,17 @@ export function attachMonthlyPlanPaymentState(
   });
 }
 
+/** Payment phase from realized amounts (preferred over DB `status` for UI when amounts are attached). */
+export type PlanItemPaymentPhase = "pending" | "partial" | "paid";
+
+export function derivePlanItemPaymentPhase(item: { paid_amount: number; remaining_amount: number }): PlanItemPaymentPhase {
+  const remaining = Number(item.remaining_amount ?? 0);
+  const paid = Number(item.paid_amount ?? 0);
+  if (remaining <= 0) return "paid";
+  if (paid > 0) return "partial";
+  return "pending";
+}
+
 function getCategoryName(category: HouseholdTransaction["category"] | MonthlyPlanItem["category"]) {
   if (Array.isArray(category)) return category[0]?.name ?? "Sem categoria";
   return category?.name ?? "Sem categoria";

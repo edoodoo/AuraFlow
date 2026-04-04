@@ -67,17 +67,29 @@ export async function PUT(req: Request, { params }: Params) {
   };
 
   const supabase = getSupabaseAdminClient();
-  const { data, error } = await supabase
+  const { error } = await supabase.from("monthly_plan_items").update(patch).eq("id", id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  try {
+    await refreshMonthlyPlanItemStatus(id);
+  } catch (refreshError) {
+    return NextResponse.json(
+      { error: refreshError instanceof Error ? refreshError.message : "Não foi possível atualizar o status do item." },
+      { status: 400 },
+    );
+  }
+
+  const { data: refreshed, error: reloadError } = await supabase
     .from("monthly_plan_items")
-    .update(patch)
-    .eq("id", id)
     .select(
       "id,monthly_plan_id,category_id,title,section,expected_amount,is_fixed,due_date,status,assigned_user_id,paid_by_user_id,paid_at,notes,created_at,updated_at,category:categories(name)",
     )
+    .eq("id", id)
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ item: data });
+  if (reloadError) return NextResponse.json({ error: reloadError.message }, { status: 400 });
+  return NextResponse.json({ item: refreshed });
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
